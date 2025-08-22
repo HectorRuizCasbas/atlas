@@ -315,49 +315,39 @@
         .help-modal::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
-        
-        /* Estilos para la barra de título personalizada */
-        #custom-title-bar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 1000;
-            -webkit-app-region: drag; /* Hace la barra arrastrable */
-            user-select: none;
-            border-bottom: 1px solid #475569;
-        }
-        
-        #custom-title-bar button {
-            -webkit-app-region: no-drag; /* Los botones no son arrastrables */
-        }
-        
-        #custom-title-bar button:hover {
-            background-color: #475569;
-        }
-        
-        #close-btn:hover {
-            background-color: #dc2626 !important; /* Rojo más intenso */
-        }
-        
+
         /* Ajustar el espaciado del contenido principal */
-        #screen-login, #screen-main {
-            margin-top: 48px; /* 12 * 4 = 48px para compensar la barra de título fija */
-        }
-        
-        /* Header fijo para la pantalla principal */
-        #screen-main header {
-            position: fixed;
-            top: 48px; /* Debajo de la barra de título */
-            left: 0;
-            right: 0;
-            z-index: 999;
-        }
-        
-        /* Ajustar el main para que no se superponga con el header fijo */
-        #screen-main main {
-            margin-top: 72px; /* 48px (barra título) + 24px (header) */
-        }
+#screen-login, #screen-main {
+    margin-top: 48px; /* 12 * 4 = 48px para compensar la barra de título fija */
+}
+
+/* Header fijo para la pantalla principal */
+#screen-main header {
+    position: fixed;
+    top: 48px; /* Debajo de la barra de título */
+    left: 0;
+    right: 0;
+    z-index: 999;
+}
+
+/* Ajustar el main para que no se superponga con el header fijo */
+#screen-main main {
+    margin-top: 72px; /* 48px (barra título) + 24px (header) */
+}
+
+/* Header fijo para la pantalla de gestión de usuarios */
+#screen-user-management header {
+    position: fixed;
+    top: 48px; /* Debajo de la barra de título */
+    left: 0;
+    right: 0;
+    z-index: 999;
+}
+
+/* Ajustar el main de gestión de usuarios para que no se superponga con el header fijo */
+#screen-user-management main {
+    margin-top: 72px; /* 48px (barra título) + 24px (header) */
+}
         
         /* Header fijo para la pantalla de gestión de usuarios */
         #screen-user-management header {
@@ -376,19 +366,7 @@
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen flex flex-col">
 
-    <!-- Barra de título personalizada -->
-    <div id="custom-title-bar" class="bg-slate-800 h-12 flex items-center justify-between px-4 select-none">
-        <div class="flex items-center gap-3">
-            <img src="icono.jpg" alt="Atlas" class="w-8 h-8 rounded-full">
-            <span class="text-lg font-semibold text-indigo-400">Atlas</span>
-        </div>
-        <div class="flex items-center gap-2">
-            
-        </div>
-    </div>
-
-    <div id="toast" class="hidden"></div>
-
+   <div id="toast" class="hidden"></div>
    <div id="screen-login" class="flex-1 flex flex-col items-center justify-center p-8">
         <!-- Icono y eslogan de la aplicación -->
         <div class="text-center mb-8">
@@ -1082,7 +1060,6 @@
             </div>
         </div>
     </div>
-
-<script src="renderer.js"></script>
+<script type="module" src="renderer.js"></script>
 </body>
 </html>

@@ -1,258 +1,268 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-// ---------------------
-// Inicialización Supabase
-// ---------------------
-const SUPABASE_URL = 'https://nxurmbocyxjfwsvvtjlr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im54dXJtYm9jeXhqZndzdnZ0amxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4NDY3NDIsImV4cCI6MjA3MTQyMjc0Mn0.nnvT08cCxZR9IN1IvRPxMXs9Y4UuqhAYikYPCAZuqTQ'; // reemplaza con tu key completa
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// ---------------------
-// Placeholders para funciones no definidas aún
-// ---------------------
-function clearUI() { console.log('clearUI llamado'); }
-function renderTasks(tasks) { console.log('renderTasks llamado', tasks); }
-function renderUserList(users) { console.log('renderUserList llamado', users); }
-function displayMessage(msg) { console.log('displayMessage', msg); }
-function displayNotification(notif) { console.log('displayNotification', notif); }
-function renderVisibilityList(list, containerId) { console.log('renderVisibilityList', list, containerId); }
-
-// ---------------------
-// Esperar a que el DOM esté cargado
-// ---------------------
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Log de prueba de conexión
-  (async () => {
-    const { data, error } = await supabase.from("profiles").select("*").limit(1);
-    if (error) console.error("Error conectando a Supabase:", error.message);
-    else console.log("Conexión OK ✅, perfiles:", data);
-  })();
+    // --- Screen and Modal Elements ---
+    const screens = {
+        login: document.getElementById('screen-login'),
+        main: document.getElementById('screen-main'),
+        userManagement: document.getElementById('screen-user-management')
+    };
 
-  // Manejo de autenticación
-  supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth event:', event, 'Session:', session);
-    if (event === 'SIGNED_IN' && session) {
-      const user = session.user;
-      loadTasks();
-      loadNotifications();
-      checkAdminAccess(user);
-    } else {
-      clearUI();
+    const modals = {
+        task: document.getElementById('modal'),
+        deleteConfirm: document.getElementById('delete-confirm-modal'),
+        changePassword: document.getElementById('change-password-modal'),
+        newUser: document.getElementById('new-user-modal'),
+        userCreatedSuccess: document.getElementById('user-created-success-modal'),
+        editUser: document.getElementById('edit-user-modal'),
+        userInfo: document.getElementById('user-info-modal'),
+        help: document.getElementById('help-modal')
+    };
+    
+    // --- Buttons ---
+    const buttons = {
+        login: document.getElementById('btn-login'),
+        newUserLink: document.getElementById('new-user-link'),
+        hamburger: document.getElementById('hamburger-button'),
+        hamburgerUserManagement: document.getElementById('hamburger-button-user-management'),
+        logout: document.getElementById('btn-logout'),
+        logoutUserManagement: document.getElementById('btn-logout-user-management'),
+        userManagement: document.getElementById('btn-user-management'),
+        backToMain: document.getElementById('btn-back-to-main-from-user-list'),
+        help: document.getElementById('btn-help'),
+        helpUserManagement: document.getElementById('btn-help-user-management'),
+        changePassword: document.getElementById('btn-change-password'),
+        changePasswordUserManagement: document.getElementById('btn-change-password-user-management'),
+        deleteOwnAccount: document.getElementById('btn-delete-own-account'),
+        deleteOwnAccountUserManagement: document.getElementById('btn-delete-own-account-user-management'),
+        closeModal: document.getElementById('close-modal'),
+        closeHelpModal: document.getElementById('btn-close-help-modal'),
+        closeDeleteConfirm: document.getElementById('btn-delete-cancel'),
+        closeNewUserModal: document.getElementById('btn-cancel-new-user'),
+        closeUserCreatedSuccess: document.getElementById('btn-close-success-modal'),
+        closeChangePassword: document.getElementById('btn-cancel-change-password'),
+        closeEditUserModal: document.getElementById('btn-cancel-edit-user'),
+        closeUserInfoModal: document.getElementById('btn-close-user-info-modal')
+    };
+
+    const hamburgerMenus = {
+        main: document.getElementById('hamburger-dropdown'),
+        userManagement: document.getElementById('hamburger-dropdown-user-management')
+    };
+    
+    // --- Helper functions to manage screen and modal visibility ---
+    function showScreen(screenId) {
+        Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+        screens[screenId].classList.remove('hidden');
     }
-  });
 
-  // Botón toggle de vista de tareas
-  const toggleBtn = document.getElementById('toggle-view-btn');
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', () => {
-      const table = document.getElementById('task-table');
-      const cards = document.getElementById('task-cards');
-      if (table && cards) {
-        table.classList.toggle('hidden');
-        cards.classList.toggle('hidden');
-      }
+    function showModal(modalId) {
+        modals[modalId].classList.remove('hidden');
+        modals[modalId].classList.add('flex');
+    }
+
+    function hideModal(modalId) {
+        modals[modalId].classList.add('hidden');
+        modals[modalId].classList.remove('flex');
+    }
+    
+    function toggleHamburgerMenu(menuId) {
+        Object.values(hamburgerMenus).forEach(menu => {
+            if (menu.id === menuId) {
+                menu.classList.toggle('show');
+            } else {
+                menu.classList.remove('show');
+            }
+        });
+    }
+    
+    // --- Event Listeners for UI interaction ---
+
+    // 1. Login Screen
+    buttons.login.addEventListener('click', () => {
+        const username = document.getElementById('login-username').value;
+        if (username) {
+            document.getElementById('current-user').textContent = username;
+            document.getElementById('current-user-user-management').textContent = username;
+            showScreen('main');
+        } else {
+            const errorMessage = document.getElementById('login-error-message');
+            errorMessage.textContent = 'Por favor, introduce un nombre de usuario.';
+            errorMessage.classList.remove('hidden');
+        }
     });
-  }
 
-  // Aquí puedes agregar más listeners del DOM si necesitas
+    buttons.newUserLink.addEventListener('click', () => {
+        showModal('newUser');
+    });
+
+    // 2. Main Screen
+    buttons.hamburger.addEventListener('click', (event) => {
+        event.stopPropagation(); // Prevents the body listener from immediately closing the menu
+        toggleHamburgerMenu('hamburger-dropdown');
+    });
+
+    buttons.userManagement.addEventListener('click', () => {
+        showScreen('userManagement');
+        toggleHamburgerMenu('hamburger-dropdown');
+    });
+
+    buttons.changePassword.addEventListener('click', () => {
+        showModal('changePassword');
+        toggleHamburgerMenu('hamburger-dropdown');
+    });
+
+    buttons.deleteOwnAccount.addEventListener('click', () => {
+        showModal('deleteConfirm');
+        document.getElementById('delete-confirm-modal-title').textContent = 'Confirmar Eliminación de Cuenta';
+        document.getElementById('delete-confirm-modal-message').textContent = '¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.';
+        document.getElementById('delete-confirm-text-input').classList.remove('hidden');
+        document.getElementById('delete-confirm-modal-info').classList.add('hidden');
+        toggleHamburgerMenu('hamburger-dropdown');
+    });
+
+    buttons.help.addEventListener('click', () => {
+        showModal('help');
+        // Placeholder help content
+        document.getElementById('help-content').innerHTML = `
+            <div class="help-section">
+                <h3>Creación y Gestión de Tareas</h3>
+                <p>Usa la sección "Crear Nueva Tarea" para añadir una tarea con su título, prioridad, descripción, y usuario asignado. Marca la casilla "Tarea privada" para que solo sea visible para el creador.</p>
+                <div class="help-feature">
+                    <strong>Guardar Cambios:</strong> Para guardar los cambios de una tarea, usa el botón "Guardar cambios" dentro del modal de la tarea.
+                </div>
+            </div>
+            <div class="help-section">
+                <h3>Filtrado de Tareas</h3>
+                <p>Utiliza la sección "Filtrar Tareas" para buscar tareas por título, estado o prioridad. Haz clic en "Resetear Filtros" para volver a la lista completa.</p>
+            </div>
+            <div class="help-section">
+                <h3>Comentarios en Tareas</h3>
+                <p>Puedes comunicarte con otros usuarios dentro del modal de cada tarea. Los mensajes se envían y reciben en tiempo real para facilitar la colaboración.</p>
+            </div>
+        `;
+        toggleHamburgerMenu('hamburger-dropdown');
+    });
+
+    buttons.logout.addEventListener('click', () => {
+        showScreen('login');
+        document.getElementById('login-username').value = '';
+        document.getElementById('login-password').value = '';
+        document.getElementById('login-error-message').classList.add('hidden');
+        toggleHamburgerMenu('hamburger-dropdown');
+    });
+
+    // 3. User Management Screen
+    buttons.hamburgerUserManagement.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleHamburgerMenu('hamburger-dropdown-user-management');
+    });
+
+    buttons.backToMain.addEventListener('click', () => {
+        showScreen('main');
+        toggleHamburgerMenu('hamburger-dropdown-user-management');
+    });
+
+    buttons.changePasswordUserManagement.addEventListener('click', () => {
+        showModal('changePassword');
+        toggleHamburgerMenu('hamburger-dropdown-user-management');
+    });
+
+    buttons.deleteOwnAccountUserManagement.addEventListener('click', () => {
+        showModal('deleteConfirm');
+        document.getElementById('delete-confirm-modal-title').textContent = 'Confirmar Eliminación de Cuenta';
+        document.getElementById('delete-confirm-modal-message').textContent = '¿Estás seguro de que quieres eliminar tu cuenta? Esta acción no se puede deshacer.';
+        document.getElementById('delete-confirm-text-input').classList.remove('hidden');
+        document.getElementById('delete-confirm-modal-info').classList.add('hidden');
+        toggleHamburgerMenu('hamburger-dropdown-user-management');
+    });
+    
+    buttons.helpUserManagement.addEventListener('click', () => {
+        showModal('help');
+        document.getElementById('help-content').innerHTML = `
+            <div class="help-section">
+                <h3>Configuración de Usuarios</h3>
+                <p>Desde esta pantalla, los administradores pueden añadir, editar y eliminar usuarios. También puedes gestionar la visibilidad de tareas entre usuarios.</p>
+            </div>
+            <div class="help-section">
+                <h3>Añadir y Editar Usuarios</h3>
+                <p>Usa el formulario superior para añadir un nuevo usuario. Para editar un usuario existente, haz clic en el icono de lápiz en la tabla de "Lista de Usuarios".</p>
+                <div class="help-feature">
+                    <strong>Visibilidad:</strong> En la ventana de edición de usuario, puedes configurar quién puede ver las tareas de este usuario.
+                </div>
+            </div>
+            <div class="help-section">
+                <h3>Eliminar Usuarios</h3>
+                <p>Solo puedes eliminar usuarios que estén desconectados. Si el usuario está en línea, la opción de eliminar estará desactivada.</p>
+            </div>
+        `;
+        toggleHamburgerMenu('hamburger-dropdown-user-management');
+    });
+    
+    buttons.logoutUserManagement.addEventListener('click', () => {
+        showScreen('login');
+        document.getElementById('login-username').value = '';
+        document.getElementById('login-password').value = '';
+        document.getElementById('login-error-message').classList.add('hidden');
+        toggleHamburgerMenu('hamburger-dropdown-user-management');
+    });
+
+    // 4. Modal Closers
+    buttons.closeModal.addEventListener('click', () => hideModal('task'));
+    buttons.closeHelpModal.addEventListener('click', () => hideModal('help'));
+    buttons.closeDeleteConfirm.addEventListener('click', () => hideModal('deleteConfirm'));
+    buttons.closeNewUserModal.addEventListener('click', () => hideModal('newUser'));
+    buttons.closeUserCreatedSuccess.addEventListener('click', () => hideModal('userCreatedSuccess'));
+    buttons.closeChangePassword.addEventListener('click', () => hideModal('changePassword'));
+    buttons.closeEditUserModal.addEventListener('click', () => hideModal('editUser'));
+    buttons.closeUserInfoModal.addEventListener('click', () => hideModal('userInfo'));
+    
+    // 5. Example of a button that would open a modal (e.g., a task card)
+    // This is just a placeholder to show how it would work
+    const exampleTaskCard = document.createElement('div');
+    exampleTaskCard.innerHTML = `<div class="bg-slate-800 p-4 rounded-xl shadow-lg cursor-pointer">
+        <h3 class="text-lg font-semibold text-indigo-400">Tarea de Ejemplo</h3>
+        <p class="text-sm text-slate-400">Ejemplo de descripción de tarea.</p>
+    </div>`;
+    exampleTaskCard.addEventListener('click', () => {
+        showModal('task');
+        // Populate modal with example data
+        document.getElementById('modal-title').textContent = 'Tarea de Ejemplo';
+        document.getElementById('edit-title').value = 'Tarea de Ejemplo';
+        document.getElementById('edit-desc').value = 'Ejemplo de descripción de tarea.';
+    });
+    document.getElementById('tasks-grid').appendChild(exampleTaskCard);
+    
+    // 6. Modal Openers (for user management)
+    const exampleUser = document.createElement('tr');
+    exampleUser.innerHTML = `<td class="py-3 px-4">usuario_ejemplo</td>
+                             <td class="py-3 px-4">Usuario</td>
+                             <td class="py-3 px-4">2 Usuarios</td>
+                             <td class="py-3 px-4">
+                                 <button class="text-blue-400 hover:text-blue-500 mr-2 btn-edit-user">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                         <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+                                     </svg>
+                                 </button>
+                                 <button class="text-rose-400 hover:text-rose-500 btn-delete-user">
+                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                         <path d="M3 6h18"></path>
+                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                     </svg>
+                                 </button>
+                             </td>`;
+
+    exampleUser.querySelector('.btn-edit-user').addEventListener('click', () => {
+        showModal('editUser');
+    });
+
+    exampleUser.querySelector('.btn-delete-user').addEventListener('click', () => {
+        showModal('deleteConfirm');
+        document.getElementById('delete-confirm-modal-title').textContent = 'Confirmar Eliminación de Usuario';
+        document.getElementById('delete-confirm-modal-message').textContent = '¿Estás seguro de que quieres eliminar al usuario "usuario_ejemplo"?';
+        document.getElementById('delete-confirm-text-input').classList.add('hidden');
+        document.getElementById('delete-confirm-modal-info').classList.remove('hidden');
+    });
+
+    document.getElementById('users-table-body').appendChild(exampleUser);
+    
 });
-
-// ---------------------
-// Funciones de usuarios
-// ---------------------
-async function registerUser(username, password) {
-  const email = `${username}@supabase.io`;
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { role: 'Usuario' } }
-  });
-  if (error) throw error;
-  alert('Usuario registrado correctamente');
-}
-
-async function loginUser(username, password) {
-  const email = `${username}@supabase.io`;
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw error;
-}
-
-async function checkAdminAccess(user) {
-  const role = user.user_metadata?.role;
-  const adminSection = document.getElementById('user-admin-section');
-  if (role !== 'Administrador' && adminSection) {
-    adminSection.style.display = 'none';
-  }
-}
-
-async function loadUsers() {
-  const { data: users, error } = await supabase.from('profiles').select('*');
-  if (error) throw error;
-  renderUserList(users);
-}
-
-async function createUser(username, password, role) {
-  const email = `${username}@supabase.io`;
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { role } }
-  });
-  if (error) throw error;
-  alert('Usuario creado');
-}
-
-async function updateUser(userId, newRole) {
-  const { data, error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-  if (error) throw error;
-}
-
-async function deleteUser(userId) {
-  alert('Usuario eliminado (requiere key de servicio)');
-}
-
-// ---------------------
-// Funciones de tareas
-// ---------------------
-async function createTask(task) {
-  const { error } = await supabase.from('tasks').insert(task);
-  if (error) throw error;
-  loadTasks();
-}
-
-async function loadTasks() {
-  const userResp = await supabase.auth.getUser();
-  const user = userResp.data.user;
-  const userId = user.id;
-
-  const { data: visibleRows } = await supabase
-    .from('visibility')
-    .select('visible_user_id')
-    .eq('viewer_id', userId);
-
-  const visibleIds = visibleRows.map(r => r.visible_user_id).join(',');
-
-  let query = supabase.from('tasks').select('*');
-  const filter = [];
-  filter.push(`creator_id.eq.${userId}`);
-  filter.push(`assigned_to_id.eq.${userId}`);
-  if (visibleIds) filter.push(`creator_id.in.(${visibleIds})`);
-  query = query.or(filter.join(','));
-
-  const { data: tasks, error } = await query.order('priority', { ascending: false });
-  if (error) throw error;
-  renderTasks(tasks);
-}
-
-async function updateTask(id, updates) {
-  const { error } = await supabase.from('tasks').update(updates).eq('id', id);
-  if (error) throw error;
-  logTaskChange(id, updates);
-  loadTasks();
-}
-
-async function deleteTask(id) {
-  const { error } = await supabase.from('tasks').delete().eq('id', id);
-  if (error) throw error;
-  loadTasks();
-}
-
-async function logTaskChange(taskId, updates) {
-  const userResp = await supabase.auth.getUser();
-  const userId = userResp.data.user.id;
-
-  const { data: oldTask } = await supabase.from('tasks').select('*').eq('id', taskId).single();
-
-  for (const field in updates) {
-    const oldValue = oldTask[field];
-    const newValue = updates[field];
-    if (oldValue !== newValue) {
-      const timestamp = new Date().toLocaleTimeString('es-ES', { hour:'2-digit',minute:'2-digit'}) + ' ' + new Date().toLocaleDateString('es-ES');
-      await supabase.from('task_history').insert({
-        task_id: taskId,
-        user_id: userId,
-        field,
-        old_value: oldValue,
-        new_value: newValue,
-        changed_at: timestamp
-      });
-    }
-  }
-}
-
-// ---------------------
-// Funciones de chat
-// ---------------------
-function subscribeChat(taskId) {
-  supabase
-    .channel('public:messages')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `task_id=eq.${taskId}` }, payload => {
-      displayMessage(payload.new);
-    })
-    .subscribe();
-}
-
-async function sendMessage(taskId, content) {
-  const userResp = await supabase.auth.getUser();
-  const user = userResp.data.user;
-  await supabase.from('messages').insert({
-    task_id: taskId,
-    user_id: user.id,
-    content,
-    created_at: new Date().toISOString()
-  });
-}
-
-// ---------------------
-// Funciones de notificaciones
-// ---------------------
-function subscribeNotifications(userId) {
-  supabase
-    .channel('public:notifications')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, payload => {
-      displayNotification(payload.new);
-    })
-    .subscribe();
-}
-
-async function loadNotifications() {
-  const userResp = await supabase.auth.getUser();
-  const user = userResp.data.user;
-  const { data: notes } = await supabase.from('notifications').select('*').eq('user_id', user.id);
-  notes.forEach(displayNotification);
-}
-
-async function clearNotifications(userId) {
-  await supabase.from('notifications').delete().eq('user_id', userId);
-}
-
-// ---------------------
-// Cambiar contraseña
-// ---------------------
-async function changePassword(newPassword) {
-  const { data, error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw error;
-  alert('Contraseña actualizada');
-}
-
-// ---------------------
-// Modal de ayuda y visibilidad
-// ---------------------
-async function loadHelp() {
-  const res = await fetch('/help/contenido.html');
-  const html = await res.text();
-  const container = document.getElementById('help-modal-body');
-  if (container) container.innerHTML = html;
-}
-
-async function loadVisibilityModal() {
-  const userResp = await supabase.auth.getUser();
-  const user = userResp.data.user;
-
-  const { data: IcanSee } = await supabase.from('visibility').select('visible_user_id').eq('viewer_id', user.id);
-  const { data: seeMe } = await supabase.from('visibility').select('viewer_id').eq('visible_user_id', user.id);
-
-  renderVisibilityList(IcanSee, 'visibilidad-sobre-mi');
-  renderVisibilityList(seeMe, 'visibilidad-de-mi');
-}

@@ -19,6 +19,6 @@ git push
 echo.
 echo ----------------------------------------
 echo ¡Despliegue completado!
-echo Accede a: https://atlas-mu-rust.vercel.app/
+echo Accede a: https://atlas-taupe-omega.vercel.app/
 
 pause

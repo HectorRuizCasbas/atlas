@@ -4,8 +4,8 @@ import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
 // ¡Importante! Usa tu URL y la Service Role Key para operaciones de administrador.
 // Guarda esta clave de forma segura y nunca la expongas en el cliente en producción.
 // Para este ejemplo de desarrollo, la incluimos aquí, pero es una MALA PRÁCTICA en producción.
-const supabaseUrl = 'TU_URL_DE_SUPABASE'; // Reemplaza con la URL de tu proyecto
-const supabaseServiceRoleKey = 'TU_SERVICE_ROLE_KEY'; // Reemplaza con tu Service Role Key
+const supabaseUrl = 'https://bcsirtdbxzgtvqlagqpq.supabase.co'; // Reemplaza con la URL de tu proyecto
+const supabaseServiceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjc2lydGRieHpndHZxbGFncXBxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTUxNDUxNSwiZXhwIjoyMDcxMDkwNTE1fQ.59MNBb08v4R-WFEwhnJvv8TXRsIZS2HCS3DwHD2Auzw'; // Reemplaza con tu Service Role Key
 
 const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
     auth: {

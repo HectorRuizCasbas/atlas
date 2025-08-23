@@ -13,8 +13,8 @@ export async function createNewUser(username, password) {
   try {
     const { data, error } = await supabase.functions.invoke('admin-auth', {
       method: 'POST',
-      body: { email, password, username },
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, username }) // 🔹 Aquí se convierte a string JSON
     });
 
     if (error) return { error: error.message };

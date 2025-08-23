@@ -1,28 +1,68 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/+esm'
+// ---------------------- LOGIN ----------------------
+const btnLogin = document.getElementById('btn-login');
+const loginUserInput = document.getElementById('login-username');
+const loginPassInput = document.getElementById('login-password');
+const loginError = document.getElementById('login-error-message');
 
-const SUPABASE_URL = 'https://upbgpmcibngxukwaaiqh.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwYmdwbWNpYm5neHVrd2FhaXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NTgxNzksImV4cCI6MjA3MTUzNDE3OX0.i-rR4f5P4RNXPppcq1VxKyyeZdKE7yFPPOa96slVw94';
+const screenLogin = document.getElementById('screen-login');
+const screenMain = document.getElementById('screen-main');
+const currentUserSpan = document.getElementById('current-user');
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Usuarios de ejemplo
+let users = [
+    { username: 'admin', password: '244466666', role: 'Administrador' },
+    { username: 'Héctor', password: '1234', role: 'Usuario' },
+    { username: 'Agustín', password: '1234', role: 'Usuario' }
+];
 
-export async function createNewUser(username, password) {
-  if (!username || !password) return { error: 'Nombre de usuario o contraseña vacíos.' };
-
-  const email = `${username}@zelenza.com`;
-
-  try {
-    const { data, error } = await supabase.functions.invoke('admin-auth', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, username }),
-      headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (error) return { error: error.message };
-    if (data?.error) return { error: data.error };
-
-    return { user: data.user, message: data.message };
-  } catch (err) {
-    console.error("Error en la función:", err);
-    return { error: err.message || 'Error inesperado' };
-  }
+function authenticate(username, password) {
+    return users.find(u => u.username === username && u.password === password);
 }
+
+btnLogin.addEventListener('click', () => {
+    const username = loginUserInput.value.trim();
+    const password = loginPassInput.value.trim();
+
+    const user = authenticate(username, password);
+
+    if (!user) {
+        loginError.textContent = 'Usuario o contraseña incorrectos';
+        loginError.classList.remove('hidden');
+        return;
+    }
+
+    loginError.classList.add('hidden');
+    loginUserInput.value = '';
+    loginPassInput.value = '';
+
+    currentUserSpan.textContent = user.username;
+
+    screenLogin.classList.add('hidden');
+    screenMain.classList.remove('hidden');
+});
+
+// ---------------------- MODAL ----------------------
+const modal = document.getElementById('modal');
+const closeModalBtn = document.getElementById('close-modal');
+
+function openModal() {
+    modal.classList.remove('hidden');
+}
+
+function closeModal() {
+    modal.classList.add('hidden');
+}
+
+closeModalBtn.addEventListener('click', closeModal);
+
+// Ejemplo: abrir modal al hacer click en el nombre del usuario
+currentUserSpan.addEventListener('click', openModal);
+
+// ---------------------- CERRAR SESIÓN ----------------------
+const btnLogout = document.getElementById('btn-logout');
+
+btnLogout.addEventListener('click', () => {
+    screenMain.classList.add('hidden');
+    screenLogin.classList.remove('hidden');
+    currentUserSpan.textContent = '';
+});

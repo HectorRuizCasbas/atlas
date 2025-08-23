@@ -10,12 +10,11 @@ export async function createNewUser(username, password) {
 
   const email = `${username}@zelenza.com`;
 
-  try {
-    const { data, error } = await supabase.functions.invoke('admin-auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, username }) // 🔹 Aquí se convierte a string JSON
-    });
+ const { data, error } = await supabase.functions.invoke('admin-auth', {
+  method: 'POST',
+  body: JSON.stringify({ email, password, username }),
+  headers: { 'Content-Type': 'application/json' }
+});
 
     if (error) return { error: error.message };
     if (data?.error) return { error: data.error };

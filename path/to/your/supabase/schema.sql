@@ -1,0 +1,1 @@
+ALTER TABLE profiles ADD COLUMN rol VARCHAR(255); ALTER TABLE profiles ADD COLUMN ultima_actividad TIMESTAMP; ALTER TABLE profiles ADD COLUMN usuariosvisibles INTEGER[];

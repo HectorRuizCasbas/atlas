@@ -10,11 +10,12 @@ export async function createNewUser(username, password) {
 
   const email = `${username}@zelenza.com`;
 
- const { data, error } = await supabase.functions.invoke('admin-auth', {
-  method: 'POST',
-  body: JSON.stringify({ email, password, username }),
-  headers: { 'Content-Type': 'application/json' }
-});
+  try {
+    const { data, error } = await supabase.functions.invoke('admin-auth', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, username }),
+      headers: { 'Content-Type': 'application/json' }
+    });
 
     if (error) return { error: error.message };
     if (data?.error) return { error: data.error };
@@ -22,6 +23,6 @@ export async function createNewUser(username, password) {
     return { user: data.user, message: data.message };
   } catch (err) {
     console.error("Error en la función:", err);
-    return { error: err.message };
+    return { error: err.message || 'Error inesperado' };
   }
 }

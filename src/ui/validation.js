@@ -5,12 +5,14 @@ const ZELENZA_DOMAIN = '@zelenza.com';
 /**
  * Habilita o deshabilita el botón de guardar usuario en función de la validez del formulario.
  */
-const checkFormValidity = () => {
+export const checkFormValidity = () => {
+    // Obtenemos todos los elementos necesarios.
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const usernameInput = document.getElementById('new-user-username');
     const saveButton = document.getElementById('btn-save-new-user');
 
+    // Si alguno de los elementos no existe, salimos de la función.
     if (!passwordInput || !confirmPasswordInput || !usernameInput || !saveButton) {
         return;
     }
@@ -19,14 +21,17 @@ const checkFormValidity = () => {
     const confirmPassword = confirmPasswordInput.value;
     const username = usernameInput.value;
 
+    // Verificamos todas las condiciones.
     const isPasswordValid = password.length >= 6;
-    const isPasswordConfirmed = password === confirmPassword && confirmPassword.length > 0;
+    const isPasswordConfirmed = (password === confirmPassword) && (confirmPassword.length > 0);
     const isUsernameValid = username.length > 0;
 
+    // Si todas las condiciones se cumplen, habilitamos el botón.
     if (isPasswordValid && isPasswordConfirmed && isUsernameValid) {
         saveButton.disabled = false;
         saveButton.classList.remove('opacity-50', 'cursor-not-allowed');
     } else {
+        // En caso contrario, lo deshabilitamos.
         saveButton.disabled = true;
         saveButton.classList.add('opacity-50', 'cursor-not-allowed');
     }
@@ -84,8 +89,6 @@ export const validatePasswordMatch = () => {
 
 /**
  * Transforma un nombre de usuario en un correo electrónico de la empresa.
- * @param {string} username El nombre de usuario ingresado.
- * @returns {string} El correo electrónico transformado.
  */
 export const transformUsernameToEmail = (username) => {
     if (username.includes('@')) {
@@ -96,35 +99,3 @@ export const transformUsernameToEmail = (username) => {
     }
     return `${username}${ZELENZA_DOMAIN}`;
 };
-
-/**
- * Configura todos los event listeners del formulario de nuevo usuario.
- */
-const setupEventListeners = () => {
-    const passwordInput = document.getElementById('new-user-password');
-    const confirmPasswordInput = document.getElementById('new-user-confirm-password');
-    const usernameInput = document.getElementById('new-user-username');
-
-    if (passwordInput) {
-        passwordInput.addEventListener('input', () => {
-            validatePasswordLength();
-            validatePasswordMatch();
-            checkFormValidity();
-        });
-    }
-
-    if (confirmPasswordInput) {
-        confirmPasswordInput.addEventListener('input', () => {
-            validatePasswordMatch();
-            checkFormValidity();
-        });
-    }
-
-    if (usernameInput) {
-        usernameInput.addEventListener('input', () => {
-            checkFormValidity();
-        });
-    }
-};
-
-document.addEventListener('DOMContentLoaded', setupEventListeners);

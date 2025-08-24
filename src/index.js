@@ -7,28 +7,21 @@ import { createUser } from './api/supabase.js';
 
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
-    // Obtener las referencias a los elementos del DOM.
-    // ESTAS LINEAS DEBEN ESTAR DENTRO DEL EVENTO DOMContentLoaded.
     const registerForm = document.getElementById('registerForm');
     const createBtn = document.getElementById('btn-save-new-user');
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const formError = document.getElementById('form-error-message');
-    
-    // Referencias a los botones del modal.
+    const usernameInput = document.getElementById('new-user-username'); // NUEVO
+
     const showNewUserModalBtn = document.getElementById('btn-show-new-user-modal');
     const closeNewUserModalBtn = document.getElementById('btn-close-new-user-modal');
     const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
-    
-    /**
-     * Función principal para manejar el envío del formulario de registro.
-     * @param {Event} event El evento de envío del formulario.
-     */
+
     const handleRegisterSubmit = async (event) => {
         event.preventDefault();
 
-        // Validar los campos antes de enviar.
-        const username = document.getElementById('new-user-username').value;
+        const username = usernameInput.value;
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
 
@@ -42,48 +35,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Transformar el usuario en un correo electrónico.
             const email = transformUsernameToEmail(username);
 
-            // Limpiar mensajes de error.
             formError.textContent = '';
-
-            // Deshabilitar el botón para evitar múltiples envíos.
             createBtn.disabled = true;
 
-            // Llamar a la función de la API para crear el usuario.
             await createUser({ email, password, username });
 
-            // Si la operación es exitosa, mostrar el modal de éxito.
             showUserCreatedSuccessModal();
             hideNewUserModal();
             
         } catch (error) {
-            // Mostrar el mensaje de error de la API.
             formError.textContent = error.message;
             console.error('Error al crear el usuario:', error);
         } finally {
-            // Habilitar el botón.
             createBtn.disabled = false;
         }
     };
     
-    // Escuchar cambios en los campos de contraseña para validación en tiempo real.
-    // Estos listeners ahora están en el lugar correcto.
-    if (passwordInput && confirmPasswordInput) {
-        passwordInput.addEventListener('input', validatePasswordLength);
-        passwordInput.addEventListener('input', validatePasswordMatch);
-        confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+    // Adjuntar los event listeners para validación en tiempo real.
+    if (passwordInput && confirmPasswordInput && usernameInput) {
+        passwordInput.addEventListener('input', () => {
+            validatePasswordLength();
+            validatePasswordMatch();
+            checkFormValidity();
+        });
+        confirmPasswordInput.addEventListener('input', () => {
+            validatePasswordMatch();
+            checkFormValidity();
+        });
+        usernameInput.addEventListener('input', checkFormValidity); // NUEVO
     }
-    
-    // Escuchar el evento de envío del formulario.
+
     if (registerForm) {
         registerForm.addEventListener('submit', handleRegisterSubmit);
     }
     
-    // Adjuntar los event listeners para los botones del modal aquí.
     if (showNewUserModalBtn) {
-        showNewUserModalBtn.addEventListener('click', showNewUserModal);
+        showNewUserModalBtn.addEventListener('click', () => {
+            showNewUserModal();
+            // Llamamos a la validación inicial cuando se abre el modal.
+            checkFormValidity();
+        });
     }
     if (closeNewUserModalBtn) {
         closeNewUserModalBtn.addEventListener('click', hideNewUserModal);

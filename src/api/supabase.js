@@ -24,9 +24,7 @@ export const createUser = async (userData) => {
         // Verificar si la respuesta fue exitosa (código de estado 200).
         if (!response.ok) {
             // Manejar errores devueltos por la función Edge.
-            throw new Error(result.error |
-
-| 'Error desconocido al crear el usuario.');
+            throw new Error(result.error || 'Error desconocido al crear el usuario.');
         }
 
         return result;

@@ -1,7 +1,7 @@
 // src/index.js
 
 // Importar todas las funciones de los módulos.
-import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal } from './ui/modal.js';
+import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail } from './ui/validation.js';
 import { createUser } from './api/supabase.js';
 

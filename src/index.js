@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const showNewUserModalBtn = document.getElementById('btn-show-new-user-modal');
     const closeNewUserModalBtn = document.getElementById('btn-close-new-user-modal');
     const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
+    const cancelNewUserBtn = document.getElementById('btn-cancel-new-user'); // Nuevo: Obtener el botón de cancelar
 
     const handleRegisterSubmit = async (event) => {
         event.preventDefault(); // Prevenir el envío por defecto del formulario
@@ -96,6 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeNewUserModalBtn) {
         closeNewUserModalBtn.addEventListener('click', hideNewUserModal);
     }
+    
+    // Nuevo: Event listener para el botón de cancelar
+    if (cancelNewUserBtn) {
+        cancelNewUserBtn.addEventListener('click', () => {
+            hideNewUserModal();
+        });
+    }
+
     if (closeSuccessModalBtn) {
         closeSuccessModalBtn.addEventListener('click', hideUserCreatedSuccessModal);
     }

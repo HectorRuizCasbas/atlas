@@ -35,10 +35,10 @@ export const checkFormValidity = () => {
 
     if (isFormValid) {
         saveButton.disabled = false;
-        saveButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        saveButton.classList.remove('opacity-50', 'cursor-not-allowed', 'btn-disabled');
     } else {
         saveButton.disabled = true;
-        saveButton.classList.add('opacity-50', 'cursor-not-allowed');
+        saveButton.classList.add('opacity-50', 'cursor-not-allowed', 'btn-disabled');
     }
 };
 

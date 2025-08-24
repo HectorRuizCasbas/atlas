@@ -3,52 +3,83 @@
 const ZELENZA_DOMAIN = '@zelenza.com';
 
 /**
+ * Habilita o deshabilita el botón de guardar usuario en función de la validez del formulario.
+ */
+const checkFormValidity = () => {
+    // Obtenemos todos los elementos necesarios.
+    const passwordInput = document.getElementById('new-user-password');
+    const confirmPasswordInput = document.getElementById('new-user-confirm-password');
+    const usernameInput = document.getElementById('new-user-username');
+    const saveButton = document.getElementById('btn-save-new-user');
+
+    // Nos aseguramos de que todos los elementos existen.
+    if (!passwordInput || !confirmPasswordInput || !usernameInput || !saveButton) {
+        console.error('Uno o más elementos del formulario no fueron encontrados.');
+        return;
+    }
+
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    const username = usernameInput.value;
+
+    // Verificamos todas las condiciones.
+    const isPasswordValid = password.length >= 6;
+    const isPasswordConfirmed = password === confirmPassword && confirmPassword.length > 0;
+    const isUsernameValid = username.length > 0;
+
+    // Si todas las condiciones se cumplen, habilitamos el botón.
+    if (isPasswordValid && isPasswordConfirmed && isUsernameValid) {
+        saveButton.disabled = false;
+        saveButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    } else {
+        // En caso contrario, lo deshabilitamos.
+        saveButton.disabled = true;
+        saveButton.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+};
+
+/**
  * Valida la longitud de la contraseña y actualiza el mensaje visual.
  */
 export const validatePasswordLength = () => {
-    // Usamos los IDs correctos del HTML
     const passwordInput = document.getElementById('new-user-password');
     const passwordLengthMessage = document.getElementById('new-user-password-help'); 
 
-    // Verificamos si los elementos existen
     if (!passwordInput || !passwordLengthMessage) return;
 
     const password = passwordInput.value;
     const length = password.length;
 
     if (length === 0) {
-        // Mensaje por defecto cuando el campo está vacío
         passwordLengthMessage.textContent = "La contraseña debe tener al menos 6 caracteres";
         passwordLengthMessage.style.color = 'gray'; 
     } else {
-        // Mensaje de longitud si no está vacío
         passwordLengthMessage.textContent = `La longitud de su contraseña es de ${length}/6.`;
-
         if (length < 6) {
             passwordLengthMessage.style.color = 'red';
         } else {
             passwordLengthMessage.style.color = 'green';
         }
     }
+    
+    // Llamamos a la función de validación del formulario
+    checkFormValidity();
 };
 
 /**
  * Valida que los campos de contraseña y confirmar contraseña coincidan.
  */
 export const validatePasswordMatch = () => {
-    // Usamos los IDs correctos del HTML
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const confirmPasswordMessage = document.getElementById('new-user-confirm-password-help');
 
-    // Verificamos si los elementos existen
     if (!passwordInput || !confirmPasswordInput || !confirmPasswordMessage) return;
 
     const password = passwordInput.value;
     const confirmPassword = confirmPasswordInput.value;
 
     if (confirmPassword.length === 0) {
-        // Mensaje por defecto cuando el campo está vacío
         confirmPasswordMessage.textContent = "Las contraseñas deben coincidir";
         confirmPasswordMessage.style.color = 'gray';
     } else if (password === confirmPassword) {
@@ -58,6 +89,9 @@ export const validatePasswordMatch = () => {
         confirmPasswordMessage.textContent = "Las contraseñas no coinciden";
         confirmPasswordMessage.style.color = 'red';
     }
+
+    // Llamamos a la función de validación del formulario
+    checkFormValidity();
 };
 
 /**
@@ -68,12 +102,19 @@ export const validatePasswordMatch = () => {
 export const transformUsernameToEmail = (username) => {
     // Comprobar si el nombre de usuario ya es un correo.
     if (username.includes('@')) {
-        // Si el dominio no es @zelenza.com, lanzar un error.
         if (!username.endsWith(ZELENZA_DOMAIN)) {
             throw new Error(`Solo se permiten usuarios del dominio ${ZELENZA_DOMAIN}`);
         }
-        return username; // Devolver el correo original si ya lo es.
+        return username;
     }
-    // Si no es un correo, añadir el dominio.
     return `${username}${ZELENZA_DOMAIN}`;
 };
+
+// Se recomienda añadir un event listener para el campo de nombre de usuario
+// para que también active la validación del botón
+document.addEventListener('DOMContentLoaded', () => {
+    const usernameInput = document.getElementById('new-user-username');
+    if (usernameInput) {
+        usernameInput.addEventListener('input', checkFormValidity);
+    }
+});

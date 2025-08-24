@@ -12,9 +12,8 @@ const checkFormValidity = () => {
     const usernameInput = document.getElementById('new-user-username');
     const saveButton = document.getElementById('btn-save-new-user');
 
-    // Nos aseguramos de que todos los elementos existen.
+    // Si alguno de los elementos no existe, salimos de la función.
     if (!passwordInput || !confirmPasswordInput || !usernameInput || !saveButton) {
-        console.error('Uno o más elementos del formulario no fueron encontrados.');
         return;
     }
 
@@ -41,7 +40,7 @@ const checkFormValidity = () => {
 /**
  * Valida la longitud de la contraseña y actualiza el mensaje visual.
  */
-export const validatePasswordLength = () => {
+const validatePasswordLength = () => {
     const passwordInput = document.getElementById('new-user-password');
     const passwordLengthMessage = document.getElementById('new-user-password-help'); 
 
@@ -61,15 +60,12 @@ export const validatePasswordLength = () => {
             passwordLengthMessage.style.color = 'green';
         }
     }
-    
-    // Llamamos a la función de validación del formulario
-    checkFormValidity();
 };
 
 /**
  * Valida que los campos de contraseña y confirmar contraseña coincidan.
  */
-export const validatePasswordMatch = () => {
+const validatePasswordMatch = () => {
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const confirmPasswordMessage = document.getElementById('new-user-confirm-password-help');
@@ -89,32 +85,40 @@ export const validatePasswordMatch = () => {
         confirmPasswordMessage.textContent = "Las contraseñas no coinciden";
         confirmPasswordMessage.style.color = 'red';
     }
-
-    // Llamamos a la función de validación del formulario
-    checkFormValidity();
 };
 
 /**
- * Transforma un nombre de usuario en un correo electrónico de la empresa.
- * @param {string} username El nombre de usuario ingresado.
- * @returns {string} El correo electrónico transformado.
+ * Configura todos los event listeners del formulario de nuevo usuario.
+ * Esta función debe ser llamada cuando el modal esté disponible en el DOM.
  */
-export const transformUsernameToEmail = (username) => {
-    // Comprobar si el nombre de usuario ya es un correo.
-    if (username.includes('@')) {
-        if (!username.endsWith(ZELENZA_DOMAIN)) {
-            throw new Error(`Solo se permiten usuarios del dominio ${ZELENZA_DOMAIN}`);
-        }
-        return username;
+const setupEventListeners = () => {
+    const passwordInput = document.getElementById('new-user-password');
+    const confirmPasswordInput = document.getElementById('new-user-confirm-password');
+    const usernameInput = document.getElementById('new-user-username');
+
+    if (passwordInput) {
+        passwordInput.addEventListener('input', () => {
+            validatePasswordLength();
+            validatePasswordMatch();
+            checkFormValidity();
+        });
     }
-    return `${username}${ZELENZA_DOMAIN}`;
+
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', () => {
+            validatePasswordMatch();
+            checkFormValidity();
+        });
+    }
+
+    if (usernameInput) {
+        usernameInput.addEventListener('input', () => {
+            checkFormValidity();
+        });
+    }
 };
 
-// Se recomienda añadir un event listener para el campo de nombre de usuario
-// para que también active la validación del botón
-document.addEventListener('DOMContentLoaded', () => {
-    const usernameInput = document.getElementById('new-user-username');
-    if (usernameInput) {
-        usernameInput.addEventListener('input', checkFormValidity);
-    }
-});
+// Se recomienda llamar a esta función cuando la página se cargue.
+// Si el modal se carga dinámicamente, deberás llamar a setupEventListeners()
+// justo después de que el modal sea agregado al DOM.
+document.addEventListener('DOMContentLoaded', setupEventListeners);

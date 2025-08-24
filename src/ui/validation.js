@@ -25,14 +25,6 @@ export const checkFormValidity = () => {
     const isUsernameValid = username.length > 0;
     const isFormValid = isPasswordValid && isPasswordConfirmed && isUsernameValid;
 
-    // Mensajes de depuración para ver el estado de cada validación.
-    console.log('--- Estado de Validación ---');
-    console.log('Usuario válido:', isUsernameValid, ' (Valor:', username, ')');
-    console.log('Contraseña válida:', isPasswordValid, ' (Longitud:', password.length, ')');
-    console.log('Contraseñas coinciden:', isPasswordConfirmed, ' (Password:', password, '| Confirm:', confirmPassword, ')');
-    console.log('Formulario válido en total:', isFormValid);
-    console.log('---------------------------');
-
     if (isFormValid) {
         saveButton.disabled = false;
         saveButton.classList.remove('opacity-50', 'cursor-not-allowed', 'btn-disabled');

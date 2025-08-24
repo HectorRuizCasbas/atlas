@@ -1,0 +1,15 @@
+create table public.profiles (
+  id uuid not null,
+  username text not null,
+  role text not null,
+  "supervisedUsers" jsonb not null default '[]'::jsonb,
+  "lastActivity" timestamp with time zone null,
+  email text null,
+  constraint profiles_pkey primary key (id),
+  constraint profiles_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE,
+  constraint profiles_role_check check (
+    (
+      role = any (array['Administrador'::text, 'Usuario'::text])
+    )
+  )
+) TABLESPACE pg_default;

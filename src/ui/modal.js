@@ -1,10 +1,8 @@
 // src/ui/modal.js
 
-// Referencias a los elementos del DOM. Se asume que los modales tienen los IDs correspondientes.
+// Referencias a los elementos del DOM.
 const registerModal = document.getElementById('registerModal');
 const successModal = document.getElementById('successModal');
-const closeRegisterModalBtn = document.getElementById('closeRegisterModalBtn');
-const showRegisterModalBtn = document.getElementById('showRegisterModalBtn');
 
 /**
  * Muestra el modal de registro de usuario.
@@ -44,7 +42,3 @@ export const showSuccessModal = () => {
 export const hideSuccessModal = () => {
     $(successModal).modal('hide');
 };
-
-// Adjuntar los event listeners a los botones.
-showRegisterModalBtn.addEventListener('click', showRegisterModal);
-closeRegisterModalBtn.addEventListener('click', hideRegisterModal);

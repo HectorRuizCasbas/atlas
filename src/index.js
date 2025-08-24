@@ -12,6 +12,10 @@ const passwordInput = document.getElementById('password');
 const confirmPasswordInput = document.getElementById('confirmPassword');
 const formError = document.getElementById('form-error-message');
 
+// Referencias a los botones del modal, que se han movido aquí para evitar el error.
+const showRegisterModalBtn = document.getElementById('showRegisterModalBtn');
+const closeRegisterModalBtn = document.getElementById('closeRegisterModalBtn');
+
 /**
  * Función principal para manejar el envío del formulario de registro.
  * @param {Event} event El evento de envío del formulario.
@@ -69,4 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Escuchar el evento de envío del formulario.
     registerForm.addEventListener('submit', handleRegisterSubmit);
+
+    // Adjuntar los event listeners para los botones del modal aquí.
+    if (showRegisterModalBtn) {
+        showRegisterModalBtn.addEventListener('click', showRegisterModal);
+    }
+    if (closeRegisterModalBtn) {
+        closeRegisterModalBtn.addEventListener('click', hideRegisterModal);
+    }
 });

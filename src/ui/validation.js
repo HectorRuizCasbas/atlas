@@ -1,7 +1,5 @@
 // src/ui/validation.js
 
-const passwordInput = document.getElementById('password');
-const confirmPasswordInput = document.getElementById('confirmPassword');
 const passwordLengthMessage = document.getElementById('password-length-message');
 const confirmPasswordMessage = document.getElementById('confirm-password-message');
 
@@ -11,6 +9,12 @@ const ZELENZA_DOMAIN = '@zelenza.com';
  * Valida la longitud de la contraseña y actualiza el mensaje visual.
  */
 export const validatePasswordLength = () => {
+    // Obtener la referencia al elemento dentro de la función
+    const passwordInput = document.getElementById('password'); 
+    
+    // Verificar si el elemento existe antes de acceder a su valor
+    if (!passwordInput) return;
+
     const password = passwordInput.value;
     const length = password.length;
     passwordLengthMessage.textContent = `La longitud de su contraseña es de ${length}/6.`;
@@ -29,6 +33,13 @@ export const validatePasswordLength = () => {
  * Valida que los campos de contraseña y confirmar contraseña coincidan.
  */
 export const validatePasswordMatch = () => {
+    // Obtener la referencia a los elementos dentro de la función
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    
+    // Verificar si los elementos existen antes de acceder a sus valores
+    if (!passwordInput || !confirmPasswordInput) return;
+
     const password = passwordInput.value;
     const confirmPassword = confirmPasswordInput.value;
 
@@ -58,6 +69,6 @@ export const transformUsernameToEmail = (username) => {
         }
         return username; // Devolver el correo original si ya lo es.
     }
-    // Si no es un correo, añadir el dominio de la empresa.
+    // Si no es un correo, añadir el dominio.
     return `${username}${ZELENZA_DOMAIN}`;
 };

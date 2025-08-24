@@ -1,7 +1,7 @@
 // src/index.js
 
 // Importar todas las funciones de los módulos.
-import { showRegisterModal, hideNewUserModal, showSuccessModal } from './ui/modal.js';
+import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail } from './ui/validation.js';
 import { createUser } from './api/supabase.js';
 
@@ -10,14 +10,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Obtener las referencias a los elementos del DOM.
     // ESTAS LINEAS DEBEN ESTAR DENTRO DEL EVENTO DOMContentLoaded.
     const registerForm = document.getElementById('registerForm');
-    const createBtn = document.getElementById('createBtn');
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const createBtn = document.getElementById('btn-save-new-user');
+    const passwordInput = document.getElementById('new-user-password');
+    const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const formError = document.getElementById('form-error-message');
     
     // Referencias a los botones del modal.
-    const showRegisterModalBtn = document.getElementById('showRegisterModalBtn');
-    const closeRegisterModalBtn = document.getElementById('closeRegisterModalBtn');
+    const showNewUserModalBtn = document.getElementById('btn-show-new-user-modal');
+    const closeNewUserModalBtn = document.getElementById('btn-close-new-user-modal');
+    const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
     
     /**
      * Función principal para manejar el envío del formulario de registro.
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
 
         // Validar los campos antes de enviar.
-        const username = document.getElementById('username').value;
+        const username = document.getElementById('new-user-username').value;
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
 
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
             return;
         }
-        if (password!== confirmPassword) {
+        if (password !== confirmPassword) {
             formError.textContent = 'Las contraseñas no coinciden.';
             return;
         }
@@ -54,8 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
             await createUser({ email, password, username });
 
             // Si la operación es exitosa, mostrar el modal de éxito.
-            showSuccessModal();
-            hideRegisterModal();
+            showUserCreatedSuccessModal();
+            hideNewUserModal();
             
         } catch (error) {
             // Mostrar el mensaje de error de la API.
@@ -81,10 +82,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Adjuntar los event listeners para los botones del modal aquí.
-    if (showRegisterModalBtn) {
-        showRegisterModalBtn.addEventListener('click', showRegisterModal);
+    if (showNewUserModalBtn) {
+        showNewUserModalBtn.addEventListener('click', showNewUserModal);
     }
-    if (closeRegisterModalBtn) {
-        closeRegisterModalBtn.addEventListener('click', hideRegisterModal);
+    if (closeNewUserModalBtn) {
+        closeNewUserModalBtn.addEventListener('click', hideNewUserModal);
+    }
+    if (closeSuccessModalBtn) {
+        closeSuccessModalBtn.addEventListener('click', hideUserCreatedSuccessModal);
     }
 });

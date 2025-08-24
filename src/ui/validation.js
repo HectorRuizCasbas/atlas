@@ -35,24 +35,17 @@ export const checkFormValidity = () => {
 };
 
 /**
- * Valida la longitud de la contraseña y actualiza el mensaje visual.
+ * Valida que la contraseña tenga al menos 6 caracteres.
  */
 export const validatePasswordLength = () => {
     const passwordInput = document.getElementById('new-user-password');
-    const passwordLengthMessage = document.getElementById('new-user-password-help'); 
-    if (!passwordInput || !passwordLengthMessage) return;
-    const password = passwordInput.value;
-    const length = password.length;
-    if (length === 0) {
-        passwordLengthMessage.textContent = "La contraseña debe tener al menos 6 caracteres";
-        passwordLengthMessage.style.color = 'gray'; 
+    const passwordMessage = document.getElementById('new-user-password-help');
+    if (!passwordInput || !passwordMessage) return;
+    if (passwordInput.value.length >= 6 || passwordInput.value.length === 0) {
+        passwordMessage.style.display = 'none';
     } else {
-        passwordLengthMessage.textContent = `La longitud de su contraseña es de ${length}/6.`;
-        if (length < 6) {
-            passwordLengthMessage.style.color = 'red';
-        } else {
-            passwordLengthMessage.style.color = 'green';
-        }
+        passwordMessage.textContent = "La contraseña debe tener al menos 6 caracteres";
+        passwordMessage.style.display = 'block';
     }
 };
 
@@ -80,13 +73,19 @@ export const validatePasswordMatch = () => {
 
 /**
  * Transforma un nombre de usuario en un correo electrónico de la empresa.
+ * @param {string} username - El nombre de usuario a transformar.
+ * @returns {string} El correo electrónico resultante.
+ * @throws {Error} Si el usuario introduce un correo con un dominio diferente a @zelenza.com.
  */
 export const transformUsernameToEmail = (username) => {
+    // Si el nombre de usuario ya contiene un '@', se asume que es un correo completo.
     if (username.includes('@')) {
+        // Verificar que el dominio sea el correcto.
         if (!username.endsWith(ZELENZA_DOMAIN)) {
-            throw new Error(`Solo se permiten usuarios del dominio ${ZELENZA_DOMAIN}`);
+            throw new Error(`Solo se permiten usuarios del dominio ${ZELENZA_DOMAIN}.`);
         }
         return username;
     }
+    // Si no contiene '@', se añade el dominio de Zelenza.
     return `${username}${ZELENZA_DOMAIN}`;
 };

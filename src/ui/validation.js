@@ -6,14 +6,13 @@ const ZELENZA_DOMAIN = '@zelenza.com';
  * Habilita o deshabilita el botón de guardar usuario en función de la validez del formulario.
  */
 export const checkFormValidity = () => {
-    // Obtenemos todos los elementos necesarios.
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const usernameInput = document.getElementById('new-user-username');
     const saveButton = document.getElementById('btn-save-new-user');
 
-    // Si alguno de los elementos no existe, salimos de la función.
     if (!passwordInput || !confirmPasswordInput || !usernameInput || !saveButton) {
+        console.warn('Advertencia: No se encontraron todos los elementos del formulario para la validación.');
         return;
     }
 
@@ -21,17 +20,23 @@ export const checkFormValidity = () => {
     const confirmPassword = confirmPasswordInput.value;
     const username = usernameInput.value;
 
-    // Verificamos todas las condiciones.
     const isPasswordValid = password.length >= 6;
     const isPasswordConfirmed = (password === confirmPassword) && (confirmPassword.length > 0);
     const isUsernameValid = username.length > 0;
+    const isFormValid = isPasswordValid && isPasswordConfirmed && isUsernameValid;
 
-    // Si todas las condiciones se cumplen, habilitamos el botón.
-    if (isPasswordValid && isPasswordConfirmed && isUsernameValid) {
+    // Mensajes de depuración para ver el estado de cada validación.
+    console.log('--- Estado de Validación ---');
+    console.log('Usuario válido:', isUsernameValid, ' (Valor:', username, ')');
+    console.log('Contraseña válida:', isPasswordValid, ' (Longitud:', password.length, ')');
+    console.log('Contraseñas coinciden:', isPasswordConfirmed, ' (Password:', password, '| Confirm:', confirmPassword, ')');
+    console.log('Formulario válido en total:', isFormValid);
+    console.log('---------------------------');
+
+    if (isFormValid) {
         saveButton.disabled = false;
         saveButton.classList.remove('opacity-50', 'cursor-not-allowed');
     } else {
-        // En caso contrario, lo deshabilitamos.
         saveButton.disabled = true;
         saveButton.classList.add('opacity-50', 'cursor-not-allowed');
     }
@@ -43,12 +48,9 @@ export const checkFormValidity = () => {
 export const validatePasswordLength = () => {
     const passwordInput = document.getElementById('new-user-password');
     const passwordLengthMessage = document.getElementById('new-user-password-help'); 
-
     if (!passwordInput || !passwordLengthMessage) return;
-
     const password = passwordInput.value;
     const length = password.length;
-
     if (length === 0) {
         passwordLengthMessage.textContent = "La contraseña debe tener al menos 6 caracteres";
         passwordLengthMessage.style.color = 'gray'; 
@@ -69,12 +71,9 @@ export const validatePasswordMatch = () => {
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const confirmPasswordMessage = document.getElementById('new-user-confirm-password-help');
-
     if (!passwordInput || !confirmPasswordInput || !confirmPasswordMessage) return;
-
     const password = passwordInput.value;
     const confirmPassword = confirmPasswordInput.value;
-
     if (confirmPassword.length === 0) {
         confirmPasswordMessage.textContent = "Las contraseñas deben coincidir";
         confirmPasswordMessage.style.color = 'gray';

@@ -18,7 +18,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
 
     const handleRegisterSubmit = async (event) => {
-        // ...código de manejo de envío...
+        event.preventDefault(); // Prevenir el envío por defecto del formulario
+
+        // Obtener los valores del formulario
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+        
+        // Final frontend validation before sending
+        if (password !== confirmPassword || password.length < 6 || username.length === 0) {
+            formError.textContent = "Por favor, revisa los campos del formulario.";
+            formError.style.display = 'block';
+            return;
+        }
+
+        formError.textContent = "";
+        formError.style.display = 'none';
+
+        try {
+            // Transformar el nombre de usuario a email
+            const email = transformUsernameToEmail(username);
+
+            // Deshabilitar el botón y mostrar estado de carga
+            createBtn.disabled = true;
+            createBtn.innerHTML = 'Creando...';
+            createBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Llamar a la función de Supabase para crear el usuario
+            const result = await createUser({
+                email: email,
+                password: password,
+                username: username
+            });
+            
+            if (result && result.success) {
+                console.log("Usuario creado correctamente:", result.user);
+                hideNewUserModal();
+                showUserCreatedSuccessModal();
+                registerForm.reset(); // Limpiar el formulario
+            } else {
+                 throw new Error(result.error || "Error desconocido al crear el usuario.");
+            }
+
+        } catch (error) {
+            console.error("Error en la creación del usuario:", error);
+            formError.textContent = error.message || "Ha ocurrido un error inesperado.";
+            formError.style.display = 'block';
+        } finally {
+            // Habilitar el botón de nuevo al finalizar
+            createBtn.disabled = false;
+            createBtn.innerHTML = 'Crear nuevo usuario';
+            createBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            checkFormValidity();
+        }
     };
 
     if (passwordInput && confirmPasswordInput && usernameInput) {

@@ -2,11 +2,13 @@
 
 // Importar todas las funciones de los módulos.
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal } from './ui/modal.js';
-import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail } from './ui/validation.js';
+import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity } from './ui/validation.js';
 import { createUser } from './api/supabase.js';
 
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
+    // Obtener las referencias a los elementos del DOM.
+    // ESTAS LINEAS DEBEN ESTAR DENTRO DEL EVENTO DOMContentLoaded.
     const registerForm = document.getElementById('registerForm');
     const createBtn = document.getElementById('btn-save-new-user');
     const passwordInput = document.getElementById('new-user-password');
@@ -14,10 +16,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const formError = document.getElementById('form-error-message');
     const usernameInput = document.getElementById('new-user-username'); // NUEVO
 
+    // Referencias a los botones del modal.
     const showNewUserModalBtn = document.getElementById('btn-show-new-user-modal');
     const closeNewUserModalBtn = document.getElementById('btn-close-new-user-modal');
     const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
-
+    
+    /**
+     * Función principal para manejar el envío del formulario de registro.
+     * @param {Event} event El evento de envío del formulario.
+     */
     const handleRegisterSubmit = async (event) => {
         event.preventDefault();
 

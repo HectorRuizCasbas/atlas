@@ -1,44 +1,46 @@
 // src/ui/modal.js
 
 // Referencias a los elementos del DOM.
-const registerModal = document.getElementById('registerModal');
-const successModal = document.getElementById('successModal');
+const newUserModal = document.getElementById('new-user-modal');
+const userCreatedSuccessModal = document.getElementById('user-created-success-modal');
 
 /**
- * Muestra el modal de registro de usuario.
+ * Muestra el modal para crear un nuevo usuario.
  */
-export const showRegisterModal = () => {
-    // Usar la API de Bootstrap para mostrar el modal.
-    // Se asume que la librería Bootstrap ha sido cargada.
-    $(registerModal).modal('show');
+export const showNewUserModal = () => {
+    newUserModal.classList.remove('hidden');
+    newUserModal.classList.add('flex');
 };
 
 /**
- * Oculta el modal de registro y limpia los campos.
+ * Oculta el modal de nuevo usuario y limpia los campos.
  */
-export const hideRegisterModal = () => {
+export const hideNewUserModal = () => {
     // Limpiar los campos del formulario.
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    document.getElementById('confirmPassword').value = '';
-    
-    // Ocultar el modal de registro.
-    $(registerModal).modal('hide');
+    document.getElementById('new-user-username').value = '';
+    document.getElementById('new-user-password').value = '';
+    document.getElementById('new-user-confirm-password').value = '';
+
+    // Ocultar el modal de nuevo usuario.
+    newUserModal.classList.add('hidden');
+    newUserModal.classList.remove('flex');
 };
 
 /**
- * Muestra el modal de éxito.
+ * Muestra el modal de éxito de creación de usuario.
  */
-export const showSuccessModal = () => {
+export const showUserCreatedSuccessModal = () => {
     // Ocultar el modal de registro si está visible.
-    $(registerModal).modal('hide');
+    hideNewUserModal();
     // Mostrar el modal de éxito.
-    $(successModal).modal('show');
+    userCreatedSuccessModal.classList.remove('hidden');
+    userCreatedSuccessModal.classList.add('flex');
 };
 
 /**
  * Oculta el modal de éxito.
  */
-export const hideSuccessModal = () => {
-    $(successModal).modal('hide');
+export const hideUserCreatedSuccessModal = () => {
+    userCreatedSuccessModal.classList.add('hidden');
+    userCreatedSuccessModal.classList.remove('flex');
 };

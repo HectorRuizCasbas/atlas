@@ -234,3 +234,154 @@ export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) =>
         throw error;
     }
 };
+
+/**
+ * Obtiene una tarea específica con su historial
+ * @param {string} taskId - ID de la tarea
+ * @returns {Promise<object>} - Tarea con historial
+ */
+export const getTaskWithHistory = async (taskId) => {
+    try {
+        // Obtener la tarea
+        const { data: task, error: taskError } = await supabaseClient
+            .from('tasks')
+            .select(`
+                id,
+                titulo,
+                descripcion,
+                creador,
+                asignado_a,
+                prioridad,
+                estado,
+                privada,
+                departamento,
+                created_at,
+                updated_at,
+                creator_profile:creador(id, username, full_name),
+                assigned_profile:asignado_a(id, username, full_name)
+            `)
+            .eq('id', taskId)
+            .single();
+
+        if (taskError) {
+            throw new Error('Error obteniendo tarea');
+        }
+
+        // Obtener el historial
+        const { data: history, error: historyError } = await supabaseClient
+            .from('task_history')
+            .select(`
+                id,
+                campo_modificado,
+                valor_anterior,
+                valor_nuevo,
+                comentario,
+                created_at,
+                usuario_profile:usuario_id(id, username, full_name)
+            `)
+            .eq('task_id', taskId)
+            .order('created_at', { ascending: true });
+
+        if (historyError) {
+            throw new Error('Error obteniendo historial');
+        }
+
+        return {
+            task,
+            history: history || []
+        };
+    } catch (error) {
+        console.error('Error obteniendo tarea con historial:', error);
+        throw error;
+    }
+};
+
+/**
+ * Envía un mensaje de chat para una tarea
+ * @param {string} taskId - ID de la tarea
+ * @param {string} message - Mensaje a enviar
+ * @returns {Promise<object>} - Resultado del envío
+ */
+export const sendChatMessage = async (taskId, message) => {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+            throw new Error('No hay sesión activa');
+        }
+
+        const currentProfile = await getCurrentUserProfile();
+
+        // Insertar mensaje en el historial
+        const { data: newMessage, error } = await supabaseClient
+            .from('task_history')
+            .insert({
+                task_id: taskId,
+                usuario_id: currentProfile.id,
+                campo_modificado: 'chat_message',
+                valor_anterior: null,
+                valor_nuevo: message.trim(),
+                comentario: null
+            })
+            .select(`
+                id,
+                campo_modificado,
+                valor_anterior,
+                valor_nuevo,
+                comentario,
+                created_at,
+                usuario_profile:usuario_id(id, username, full_name)
+            `)
+            .single();
+
+        if (error) {
+            throw new Error('Error enviando mensaje');
+        }
+
+        return newMessage;
+    } catch (error) {
+        console.error('Error enviando mensaje de chat:', error);
+        throw error;
+    }
+};
+
+/**
+ * Suscribe a cambios en tiempo real del historial de una tarea
+ * @param {string} taskId - ID de la tarea
+ * @param {function} callback - Función a ejecutar cuando hay cambios
+ * @returns {object} - Suscripción de Supabase
+ */
+export const subscribeToTaskHistory = (taskId, callback) => {
+    return supabaseClient
+        .channel(`task_history_${taskId}`)
+        .on(
+            'postgres_changes',
+            {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'task_history',
+                filter: `task_id=eq.${taskId}`
+            },
+            async (payload) => {
+                // Obtener datos completos del nuevo registro
+                const { data: newEntry } = await supabaseClient
+                    .from('task_history')
+                    .select(`
+                        id,
+                        campo_modificado,
+                        valor_anterior,
+                        valor_nuevo,
+                        comentario,
+                        created_at,
+                        usuario_profile:usuario_id(id, username, full_name)
+                    `)
+                    .eq('id', payload.new.id)
+                    .single();
+
+                if (newEntry) {
+                    callback(newEntry);
+                }
+            }
+        )
+        .subscribe();
+};

@@ -1,7 +1,7 @@
 // src/ui/tasks.js
 // Funciones para la gestión de tareas
 
-import { createTask, getCurrentUserProfile, getSupervisedUsers, getUserTasks } from '../api/supabase.js';
+import { createTask, getCurrentUserProfile, getSupervisedUsers, getUserTasks, getTaskWithHistory, sendChatMessage, subscribeToTaskHistory } from '../api/supabase.js';
 
 /**
  * Muestra un mensaje toast al usuario
@@ -215,6 +215,9 @@ export const initializeTaskManagement = () => {
     
     // Event listeners para filtros
     setupFilterEventListeners();
+    
+    // Inicializar modal de detalles
+    initTaskDetailModal();
 };
 
 /**
@@ -349,43 +352,32 @@ export const renderTaskCards = (tasks) => {
  * Agrega event listeners a las tarjetas de tareas
  */
 export const addTaskCardEventListeners = () => {
-    // Event listeners para abrir detalle de tarea
-    document.querySelectorAll('.task-card').forEach(card => {
-        card.addEventListener('click', (e) => {
-            // No abrir si se clickeó el botón de eliminar
-            if (e.target.closest('.delete-task-btn')) return;
-            
-            const taskId = card.dataset.taskId;
-            openTaskDetail(taskId);
-        });
-    });
-
-    // Event listeners para botones de eliminar (placeholder)
-    document.querySelectorAll('.delete-task-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const taskId = btn.dataset.taskId;
-            // TODO: Implementar eliminación de tarea
-            showToast('Función de eliminar tarea pendiente de implementar', 'info');
-        });
+    // Event listeners para tarjetas de tareas
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.task-card')) {
+            const taskId = e.target.closest('.task-card').dataset.taskId;
+            if (taskId) {
+                openTaskDetailModal(taskId);
+            }
+        }
+        
+        if (e.target.closest('.delete-task-btn')) {
+            e.stopPropagation(); // Evitar que se abra el modal
+            const taskId = e.target.closest('.delete-task-btn').dataset.taskId;
+            if (taskId) {
+                // TODO: Implementar eliminación de tarea
+                console.log('Eliminar tarea:', taskId);
+            }
+        }
     });
 };
 
 /**
- * Abre el modal de detalle de tarea
+ * Abre el modal de detalle de tarea (función legacy)
  * @param {string} taskId - ID de la tarea
  */
 export const openTaskDetail = (taskId) => {
-    // TODO: Implementar apertura del modal con datos de la tarea
-    console.log('Abriendo detalle de tarea:', taskId);
-    
-    // Por ahora, mostrar el modal existente
-    const modal = document.getElementById('modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        showToast('Modal de detalle pendiente de implementar completamente', 'info');
-    }
+    openTaskDetailModal(taskId);
 };
 
 /**
@@ -486,6 +478,276 @@ export const setupFilterEventListeners = () => {
             
             // Recargar tareas
             loadTasks();
+        });
+    }
+};
+
+// Variables globales para el modal de detalles
+let currentTaskId = null;
+let taskHistorySubscription = null;
+
+/**
+ * Abre el modal de detalles de tarea
+ * @param {string} taskId - ID de la tarea
+ */
+export const openTaskDetailModal = async (taskId) => {
+    try {
+        currentTaskId = taskId;
+        
+        // Obtener datos de la tarea con historial
+        const { task, history } = await getTaskWithHistory(taskId);
+        
+        // Cargar datos en el formulario
+        await loadTaskDetailsForm(task);
+        
+        // Cargar historial y chat
+        loadTaskHistory(history);
+        
+        // Configurar suscripción en tiempo real
+        setupRealtimeSubscription(taskId);
+        
+        // Mostrar modal
+        const modal = document.getElementById('task-detail-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+    } catch (error) {
+        console.error('Error abriendo modal de tarea:', error);
+        showToast('Error al cargar los detalles de la tarea', 'error');
+    }
+};
+
+/**
+ * Cierra el modal de detalles de tarea
+ */
+export const closeTaskDetailModal = () => {
+    const modal = document.getElementById('task-detail-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    
+    // Limpiar suscripción
+    if (taskHistorySubscription) {
+        taskHistorySubscription.unsubscribe();
+        taskHistorySubscription = null;
+    }
+    
+    currentTaskId = null;
+};
+
+/**
+ * Carga los datos de la tarea en el formulario
+ * @param {object} task - Datos de la tarea
+ */
+const loadTaskDetailsForm = async (task) => {
+    // Cargar datos básicos
+    document.getElementById('task-detail-title').value = task.titulo || '';
+    document.getElementById('task-detail-description').value = task.descripcion || '';
+    document.getElementById('task-detail-status').value = task.estado || 'Sin iniciar';
+    document.getElementById('task-detail-priority').value = task.prioridad || 'Media';
+    document.getElementById('task-detail-private').checked = task.privada || false;
+    
+    // Cargar dropdown de usuarios asignados
+    await loadTaskDetailAssignedUsers(task.asignado_a);
+};
+
+/**
+ * Carga el dropdown de usuarios para asignación en el modal
+ * @param {string} currentAssignedId - ID del usuario actualmente asignado
+ */
+const loadTaskDetailAssignedUsers = async (currentAssignedId) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        const supervisedUsers = await getSupervisedUsers();
+        
+        const assignedSelect = document.getElementById('task-detail-assigned');
+        assignedSelect.innerHTML = '';
+        
+        // Agregar usuario actual
+        const currentOption = document.createElement('option');
+        currentOption.value = currentProfile.id;
+        currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+        if (currentAssignedId === currentProfile.id) {
+            currentOption.selected = true;
+        }
+        assignedSelect.appendChild(currentOption);
+        
+        // Agregar usuarios supervisados
+        supervisedUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.id;
+            option.textContent = user.full_name || user.username;
+            if (currentAssignedId === user.id) {
+                option.selected = true;
+            }
+            assignedSelect.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando usuarios para asignación:', error);
+    }
+};
+
+/**
+ * Carga el historial de la tarea en el chat
+ * @param {Array} history - Historial de la tarea
+ */
+const loadTaskHistory = (history) => {
+    const chatContainer = document.getElementById('task-chat-messages');
+    chatContainer.innerHTML = '';
+    
+    history.forEach(entry => {
+        const messageElement = createHistoryMessage(entry);
+        chatContainer.appendChild(messageElement);
+    });
+    
+    // Scroll al final
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+};
+
+/**
+ * Crea un elemento de mensaje para el historial/chat
+ * @param {object} entry - Entrada del historial
+ * @returns {HTMLElement} - Elemento del mensaje
+ */
+const createHistoryMessage = (entry) => {
+    const messageDiv = document.createElement('div');
+    const isCurrentUser = entry.usuario_profile?.id === getCurrentUserProfile()?.id;
+    const isChatMessage = entry.campo_modificado === 'chat_message';
+    
+    if (isChatMessage) {
+        // Mensaje de chat estilo WhatsApp
+        messageDiv.className = `flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
+        
+        const bubble = document.createElement('div');
+        bubble.className = `max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+            isCurrentUser 
+                ? 'bg-emerald-600 text-white' 
+                : 'bg-slate-700 text-slate-200'
+        }`;
+        
+        const userName = document.createElement('div');
+        userName.className = 'text-xs font-medium mb-1';
+        userName.textContent = entry.usuario_profile?.full_name || entry.usuario_profile?.username || 'Usuario';
+        
+        const messageText = document.createElement('div');
+        messageText.className = 'text-sm';
+        messageText.textContent = entry.valor_nuevo;
+        
+        const timeText = document.createElement('div');
+        timeText.className = 'text-xs opacity-75 mt-1 text-right';
+        timeText.textContent = formatTime(entry.created_at);
+        
+        bubble.appendChild(userName);
+        bubble.appendChild(messageText);
+        bubble.appendChild(timeText);
+        messageDiv.appendChild(bubble);
+        
+    } else {
+        // Mensaje de historial en cursiva
+        messageDiv.className = 'text-center';
+        
+        const historyText = document.createElement('div');
+        historyText.className = 'text-sm text-slate-400 italic bg-slate-800 px-3 py-2 rounded-lg inline-block';
+        
+        if (entry.comentario) {
+            historyText.textContent = entry.comentario;
+        } else {
+            const userName = entry.usuario_profile?.full_name || entry.usuario_profile?.username || 'Usuario';
+            const time = formatTime(entry.created_at);
+            historyText.textContent = `[${userName}] ${entry.campo_modificado}: ${entry.valor_nuevo} (${time})`;
+        }
+        
+        messageDiv.appendChild(historyText);
+    }
+    
+    return messageDiv;
+};
+
+/**
+ * Configura la suscripción en tiempo real para el historial
+ * @param {string} taskId - ID de la tarea
+ */
+const setupRealtimeSubscription = (taskId) => {
+    // Limpiar suscripción anterior si existe
+    if (taskHistorySubscription) {
+        taskHistorySubscription.unsubscribe();
+    }
+    
+    // Crear nueva suscripción
+    taskHistorySubscription = subscribeToTaskHistory(taskId, (newEntry) => {
+        const chatContainer = document.getElementById('task-chat-messages');
+        const messageElement = createHistoryMessage(newEntry);
+        chatContainer.appendChild(messageElement);
+        
+        // Scroll al final
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+};
+
+/**
+ * Envía un mensaje de chat
+ */
+const sendChatMessageHandler = async () => {
+    const messageInput = document.getElementById('chat-message-input');
+    const message = messageInput.value.trim();
+    
+    if (!message || !currentTaskId) return;
+    
+    try {
+        await sendChatMessage(currentTaskId, message);
+        messageInput.value = '';
+    } catch (error) {
+        console.error('Error enviando mensaje:', error);
+        showToast('Error al enviar mensaje', 'error');
+    }
+};
+
+/**
+ * Formatea la hora para mostrar en los mensajes
+ * @param {string} dateString - Fecha en formato ISO
+ * @returns {string} - Hora formateada
+ */
+const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+};
+
+/**
+ * Inicializa los event listeners del modal de detalles
+ */
+export const initTaskDetailModal = () => {
+    // Cerrar modal
+    const closeBtn = document.getElementById('btn-close-task-detail-modal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeTaskDetailModal);
+    }
+    
+    // Enviar mensaje de chat
+    const sendBtn = document.getElementById('btn-send-chat-message');
+    if (sendBtn) {
+        sendBtn.addEventListener('click', sendChatMessageHandler);
+    }
+    
+    // Enviar con Enter
+    const messageInput = document.getElementById('chat-message-input');
+    if (messageInput) {
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendChatMessageHandler();
+            }
+        });
+    }
+    
+    // Cerrar modal al hacer clic fuera
+    const modal = document.getElementById('task-detail-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeTaskDetailModal();
+            }
         });
     }
 };

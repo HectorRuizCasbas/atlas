@@ -1,7 +1,7 @@
 // src/ui/tasks.js
 // Funciones para la gestión de tareas
 
-import { createTask } from '../api/supabase.js';
+import { createTask, getCurrentUserProfile, getSupervisedUsers } from '../api/supabase.js';
 
 /**
  * Muestra un mensaje toast al usuario
@@ -149,6 +149,44 @@ export const handleCreateTask = async (event) => {
 };
 
 /**
+ * Carga y actualiza el dropdown de usuarios asignados
+ */
+export const loadAssignedUsersDropdown = async () => {
+    try {
+        const assignedSelect = document.getElementById('new-assigned-to');
+        if (!assignedSelect) return;
+
+        // Obtener usuarios supervisados
+        const users = await getSupervisedUsers();
+        const currentProfile = await getCurrentUserProfile();
+
+        // Limpiar opciones existentes
+        assignedSelect.innerHTML = '';
+
+        // Agregar opción del usuario actual primero
+        const currentUserOption = document.createElement('option');
+        currentUserOption.value = currentProfile.username;
+        currentUserOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+        currentUserOption.selected = true;
+        assignedSelect.appendChild(currentUserOption);
+
+        // Agregar otros usuarios supervisados
+        users.forEach(user => {
+            if (user.id !== currentProfile.id) {
+                const option = document.createElement('option');
+                option.value = user.username;
+                option.textContent = user.full_name || user.username;
+                assignedSelect.appendChild(option);
+            }
+        });
+
+    } catch (error) {
+        console.error('Error cargando usuarios:', error);
+        showToast('Error cargando lista de usuarios', 'error');
+    }
+};
+
+/**
  * Inicializa los event listeners para la gestión de tareas
  */
 export const initializeTaskManagement = () => {
@@ -165,4 +203,7 @@ export const initializeTaskManagement = () => {
             // Aquí podrías agregar validación en tiempo real si lo deseas
         });
     }
+
+    // Cargar usuarios al inicializar
+    loadAssignedUsersDropdown();
 };

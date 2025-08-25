@@ -106,3 +106,60 @@ export const createTask = async (taskData) => {
         throw error;
     }
 };
+
+/**
+ * Obtiene el perfil del usuario actual con información completa
+ * @returns {Promise<object>} - Perfil del usuario actual
+ */
+export const getCurrentUserProfile = async () => {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+            throw new Error('No hay sesión activa');
+        }
+
+        const { data: profile, error } = await supabaseClient
+            .from('profiles')
+            .select('id, username, full_name, supervisedUsers')
+            .eq('id', session.user.id)
+            .single();
+
+        if (error) {
+            throw new Error('Error obteniendo perfil del usuario');
+        }
+
+        return profile;
+    } catch (error) {
+        console.error('Error obteniendo perfil actual:', error);
+        throw error;
+    }
+};
+
+/**
+ * Obtiene los usuarios supervisados por el usuario actual
+ * @returns {Promise<Array>} - Lista de usuarios supervisados
+ */
+export const getSupervisedUsers = async () => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        const supervisedUserIds = currentProfile.supervisedUsers || [];
+        
+        // Agregar el usuario actual a la lista
+        const allUserIds = [currentProfile.id, ...supervisedUserIds];
+
+        const { data: users, error } = await supabaseClient
+            .from('profiles')
+            .select('id, username, full_name')
+            .in('id', allUserIds);
+
+        if (error) {
+            throw new Error('Error obteniendo usuarios supervisados');
+        }
+
+        return users || [];
+    } catch (error) {
+        console.error('Error obteniendo usuarios supervisados:', error);
+        throw error;
+    }
+};

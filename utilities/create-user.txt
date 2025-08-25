@@ -46,8 +46,8 @@ serve(async (req)=>{
         headers: corsHeaders
       });
     }
-    const { email, password, username } = jsonBody;
-    if (!email || !password || !username) {
+    const { email, password, username, full_name } = jsonBody;
+    if (!email || !password || !username || !full_name) {
       return new Response(JSON.stringify({
         error: "Faltan parámetros"
       }), {
@@ -75,6 +75,7 @@ serve(async (req)=>{
       {
         id: userData.user.id,
         username,
+        full_name,
         role: "Usuario",
         supervisedUsers: [],
         lastActivity: new Date().toISOString(),

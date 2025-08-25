@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const formError = document.getElementById('form-error-message');
     const usernameInput = document.getElementById('new-user-username');
+    const fullNameInput = document.getElementById('new-user-full-name');
     const showNewUserModalBtn = document.getElementById('btn-show-new-user-modal');
     const closeNewUserModalBtn = document.getElementById('btn-close-new-user-modal');
     const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
@@ -36,11 +37,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const username = usernameInput.value;
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
+        const fullName = fullNameInput.value;
         
         console.log('Datos del formulario:', { username, password: '***', confirmPassword: '***' });
         
         // Final frontend validation before sending
-        if (password !== confirmPassword || password.length < 6 || username.length === 0) {
+        if (password !== confirmPassword || password.length < 6 || username.length === 0 || fullName.trim().length === 0) {
             console.log('Validación fallida');
             formError.textContent = "Por favor, revisa los campos del formulario.";
             formError.style.display = 'block';
@@ -67,7 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const result = await createUser({
                 email: email,
                 password: password,
-                username: username
+                username: username,
+                full_name: fullName.trim()
             });
             
             if (result && result.success) {
@@ -153,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Event listeners para validación en tiempo real
-    if (passwordInput && confirmPasswordInput && usernameInput) {
+    if (passwordInput && confirmPasswordInput && usernameInput && fullNameInput) {
         passwordInput.addEventListener('input', () => {
             validatePasswordLength();
             validatePasswordMatch();
@@ -164,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             checkFormValidity();
         });
         usernameInput.addEventListener('input', checkFormValidity);
+        fullNameInput.addEventListener('input', checkFormValidity);
     }
     
     // Event listener para mostrar el modal

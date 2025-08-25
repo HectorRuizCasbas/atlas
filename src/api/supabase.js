@@ -1,8 +1,10 @@
 // src/api/supabase.js
 
 // URL del endpoint de la Función Edge. 
-// IMPORTANTE: Reemplaza <tu-referencia-proyecto> con tu referencia real de Supabase
 const SUPABASE_EDGE_FUNCTION_URL = 'https://upbgpmcibngxukwaaiqh.supabase.co/functions/v1/create-user';
+
+// IMPORTANTE: Reemplaza con tu ANON KEY de Supabase (no la service role key)
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwYmdwbWNpYm5neHVrd2FhaXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NTgxNzksImV4cCI6MjA3MTUzNDE3OX0.i-rR4f5P4RNXPppcq1VxKyyeZdKE7yFPPOa96slVw94';
 /**
  * Envía una solicitud de creación de usuario a la función Edge de Supabase.
  * @param {object} userData Los datos del usuario (email, password, username).
@@ -13,7 +15,9 @@ export const createUser = async (userData) => {
         const response = await fetch(SUPABASE_EDGE_FUNCTION_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
             },
             body: JSON.stringify(userData)
         });

@@ -97,10 +97,14 @@ export const validateEmailExists = async (email) => {
         'usuario@zelenza.com'
     ];
     
-    // Simular delay de red
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Simular delay de red más corto para testing
+    await new Promise(resolve => setTimeout(resolve, 100));
     
-    return validEmails.includes(email.toLowerCase());
+    console.log(`Validando email: ${email}`);
+    const exists = validEmails.includes(email.toLowerCase());
+    console.log(`Email ${email} existe: ${exists}`);
+    
+    return exists;
 };
 
 /**

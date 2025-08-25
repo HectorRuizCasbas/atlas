@@ -7,7 +7,6 @@ import { createUser } from './api/supabase.js';
 
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
-    const registerForm = document.getElementById('registerForm');
     const createBtn = document.getElementById('btn-save-new-user');
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
@@ -16,23 +15,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const showNewUserModalBtn = document.getElementById('btn-show-new-user-modal');
     const closeNewUserModalBtn = document.getElementById('btn-close-new-user-modal');
     const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
-    const cancelNewUserBtn = document.getElementById('btn-cancel-new-user'); // Nuevo: Obtener el botón de cancelar
+    const cancelNewUserBtn = document.getElementById('btn-cancel-new-user');
 
     const handleRegisterSubmit = async (event) => {
         event.preventDefault(); // Prevenir el envío por defecto del formulario
+        
+        console.log('Botón de crear usuario clickeado');
 
         // Obtener los valores del formulario
         const username = usernameInput.value;
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
         
+        console.log('Datos del formulario:', { username, password: '***', confirmPassword: '***' });
+        
         // Final frontend validation before sending
         if (password !== confirmPassword || password.length < 6 || username.length === 0) {
+            console.log('Validación fallida');
             formError.textContent = "Por favor, revisa los campos del formulario.";
             formError.style.display = 'block';
             return;
         }
 
+        console.log('Validación pasada, iniciando proceso...');
         formError.textContent = "";
         formError.style.display = 'none';
 
@@ -71,12 +76,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             // Habilitar el botón de nuevo al finalizar
             createBtn.disabled = false;
-            createBtn.innerHTML = 'Crear nuevo usuario';
+            createBtn.innerHTML = 'Crear Usuario';
             createBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             checkFormValidity();
         }
     };
 
+    // Event listeners para validación en tiempo real
     if (passwordInput && confirmPasswordInput && usernameInput) {
         passwordInput.addEventListener('input', () => {
             validatePasswordLength();
@@ -90,6 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         usernameInput.addEventListener('input', checkFormValidity);
     }
     
+    // Event listener para mostrar el modal
     if (showNewUserModalBtn) {
         showNewUserModalBtn.addEventListener('click', () => {
             showNewUserModal();
@@ -97,22 +104,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Event listener para cerrar el modal
     if (closeNewUserModalBtn) {
         closeNewUserModalBtn.addEventListener('click', hideNewUserModal);
     }
     
-    // Nuevo: Event listener para el botón de cancelar
+    // Event listener para el botón de cancelar
     if (cancelNewUserBtn) {
         cancelNewUserBtn.addEventListener('click', () => {
             hideNewUserModal();
         });
     }
 
+    // Event listener para cerrar el modal de éxito
     if (closeSuccessModalBtn) {
         closeSuccessModalBtn.addEventListener('click', hideUserCreatedSuccessModal);
     }
 
-    if (registerForm) {
-        registerForm.addEventListener('submit', handleRegisterSubmit);
+    // IMPORTANTE: Event listener para el botón de crear usuario
+    if (createBtn) {
+        createBtn.addEventListener('click', handleRegisterSubmit);
     }
 });

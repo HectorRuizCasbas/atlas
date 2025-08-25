@@ -63,7 +63,7 @@ serve(async (req) => {
     // Obtener el perfil del usuario creador
     const { data: creatorProfile, error: creatorError } = await supabaseClient
       .from('profiles')
-      .select('id, username')
+      .select('id, username, full_name')
       .eq('id', user.id)
       .single()
 
@@ -80,7 +80,7 @@ serve(async (req) => {
     // Obtener el perfil del usuario asignado
     const { data: assignedProfile, error: assignedError } = await supabaseClient
       .from('profiles')
-      .select('id, username')
+      .select('id, username, full_name')
       .eq('username', asignado_a)
       .single()
 
@@ -141,15 +141,15 @@ serve(async (req) => {
         campo_modificado: 'creacion',
         valor_anterior: null,
         valor_nuevo: 'Tarea creada',
-        comentario: `[${creatorProfile.username}] Tarea creada. (${formattedDate}, ${formattedTime})`
+        comentario: `[${creatorProfile.full_name || creatorProfile.username}] Tarea creada. (${formattedDate}, ${formattedTime})`
       },
       {
         task_id: newTask.id,
         usuario_id: creatorProfile.id,
         campo_modificado: 'asignacion',
         valor_anterior: null,
-        valor_nuevo: assignedProfile.username,
-        comentario: `[${creatorProfile.username}] Asignada a: ${assignedProfile.username} (${formattedDate}, ${formattedTime})`
+        valor_nuevo: assignedProfile.full_name || assignedProfile.username,
+        comentario: `[${creatorProfile.full_name || creatorProfile.username}] Asignada a: ${assignedProfile.full_name || assignedProfile.username} (${formattedDate}, ${formattedTime})`
       }
     ]
 

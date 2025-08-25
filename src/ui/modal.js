@@ -20,6 +20,13 @@ export const hideNewUserModal = () => {
     document.getElementById('new-user-username').value = '';
     document.getElementById('new-user-password').value = '';
     document.getElementById('new-user-confirm-password').value = '';
+    
+    // Limpiar mensajes de error
+    const formError = document.getElementById('form-error-message');
+    if (formError) {
+        formError.textContent = '';
+        formError.style.display = 'none';
+    }
 
     // Ocultar el modal de nuevo usuario.
     newUserModal.classList.add('hidden');

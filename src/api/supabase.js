@@ -1,7 +1,7 @@
 // src/api/supabase.js
 
-// URL del endpoint de la Función Edge. Se asume que el usuario
-// ha desplegado la función y conoce su URL.
+// URL del endpoint de la Función Edge. 
+// IMPORTANTE: Reemplaza <tu-referencia-proyecto> con tu referencia real de Supabase
 const SUPABASE_EDGE_FUNCTION_URL = 'https://<tu-referencia-proyecto>.supabase.co/functions/v1/create-user';
 
 /**

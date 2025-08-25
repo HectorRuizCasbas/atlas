@@ -79,14 +79,52 @@ export const validatePasswordMatch = () => {
 };
 
 /**
- * Transforma un nombre de usuario en un correo electrónico de la empresa.
+ * Valida si un email existe (simulación - en producción necesitarías un servicio real)
+ * @param {string} email - El email a validar
+ * @returns {Promise<boolean>} - True si el email existe
  */
-export const transformUsernameToEmail = (username) => {
+export const validateEmailExists = async (email) => {
+    // NOTA: Esta es una simulación. En producción necesitarías:
+    // 1. Un servicio de validación de emails como Hunter.io, ZeroBounce, etc.
+    // 2. O una API interna que consulte tu directorio de empleados
+    
+    // Por ahora, simulamos que algunos emails existen
+    const validEmails = [
+        'admin@zelenza.com',
+        'hector@zelenza.com',
+        'agustin@zelenza.com',
+        'test@zelenza.com',
+        'usuario@zelenza.com'
+    ];
+    
+    // Simular delay de red
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    return validEmails.includes(email.toLowerCase());
+};
+
+/**
+ * Transforma un nombre de usuario en un correo electrónico de la empresa y valida su existencia.
+ */
+export const transformUsernameToEmail = async (username) => {
+    let email;
+    
     if (username.includes('@')) {
+        // Usuario escribió email completo
         if (!username.endsWith(ZELENZA_DOMAIN)) {
             throw new Error(`Solo se permiten usuarios del dominio ${ZELENZA_DOMAIN}`);
         }
-        return username;
+        email = username;
+    } else {
+        // Usuario escribió solo el nombre
+        email = `${username}${ZELENZA_DOMAIN}`;
     }
-    return `${username}${ZELENZA_DOMAIN}`;
+    
+    // Validar que el email existe
+    const emailExists = await validateEmailExists(email);
+    if (!emailExists) {
+        throw new Error(`El email ${email} no existe en el sistema. Contacta con el administrador.`);
+    }
+    
+    return email;
 };

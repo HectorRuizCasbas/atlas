@@ -37,13 +37,16 @@ document.addEventListener('DOMContentLoaded', () => {
         formError.style.display = 'none';
 
         try {
-            // Transformar el nombre de usuario a email
-            const email = transformUsernameToEmail(username);
-
             // Deshabilitar el botón y mostrar estado de carga
             createBtn.disabled = true;
-            createBtn.innerHTML = 'Creando...';
+            createBtn.innerHTML = 'Validando email...';
             createBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Transformar el nombre de usuario a email y validar existencia
+            const email = await transformUsernameToEmail(username);
+
+            // Actualizar estado de carga
+            createBtn.innerHTML = 'Creando usuario...';
 
             // Llamar a la función de Supabase para crear el usuario
             const result = await createUser({

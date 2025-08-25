@@ -163,3 +163,74 @@ export const getSupervisedUsers = async () => {
         throw error;
     }
 };
+
+/**
+ * Obtiene las tareas que el usuario puede ver según sus permisos
+ * @param {string} filterStatus - Filtro de estado ('OPEN_TASKS' para abiertas, '' para todas, o estado específico)
+ * @param {object} filters - Filtros adicionales (priority, assigned_to, text)
+ * @returns {Promise<Array>} - Lista de tareas
+ */
+export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        const supervisedUserIds = currentProfile.supervisedUsers || [];
+        
+        // IDs de usuarios cuyas tareas puede ver: él mismo + supervisados
+        const visibleUserIds = [currentProfile.id, ...supervisedUserIds];
+
+        let query = supabaseClient
+            .from('tasks')
+            .select(`
+                id,
+                titulo,
+                descripcion,
+                creador,
+                asignado_a,
+                prioridad,
+                estado,
+                privada,
+                departamento,
+                created_at,
+                updated_at,
+                creator_profile:creador(id, username, full_name),
+                assigned_profile:asignado_a(id, username, full_name)
+            `)
+            .or(`creador.in.(${visibleUserIds.join(',')}),asignado_a.in.(${visibleUserIds.join(',')})`)
+            .order('updated_at', { ascending: false });
+
+        // Filtrar tareas privadas: solo mostrar si el usuario es el creador
+        query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
+
+        // Aplicar filtro de estado
+        if (filterStatus === 'OPEN_TASKS') {
+            query = query.neq('estado', 'Finalizada');
+        } else if (filterStatus && filterStatus !== '') {
+            query = query.eq('estado', filterStatus);
+        }
+
+        // Aplicar filtros adicionales
+        if (filters.priority && filters.priority !== '') {
+            query = query.eq('prioridad', filters.priority);
+        }
+
+        if (filters.assigned_to && filters.assigned_to !== '') {
+            query = query.eq('assigned_profile.username', filters.assigned_to);
+        }
+
+        if (filters.text && filters.text.trim() !== '') {
+            const searchText = filters.text.trim();
+            query = query.or(`titulo.ilike.%${searchText}%,descripcion.ilike.%${searchText}%`);
+        }
+
+        const { data: tasks, error } = await query;
+
+        if (error) {
+            throw new Error('Error obteniendo tareas');
+        }
+
+        return tasks || [];
+    } catch (error) {
+        console.error('Error obteniendo tareas del usuario:', error);
+        throw error;
+    }
+};

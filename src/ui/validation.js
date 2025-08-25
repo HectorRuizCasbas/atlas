@@ -127,3 +127,28 @@ export const transformUsernameToEmail = async (username) => {
     console.log(`Email generado: ${email}`);
     return email;
 };
+
+/**
+ * Valida los campos del formulario de login
+ * @param {string} username - Nombre de usuario o email
+ * @param {string} password - Contraseña
+ * @returns {string|null} - Mensaje de error o null si es válido
+ */
+export const validateLoginFields = (username, password) => {
+    const trimmedUsername = username.trim();
+    const trimmedPassword = password.trim();
+    
+    if (!trimmedUsername && !trimmedPassword) {
+        return "Indica usuario y contraseña";
+    }
+    
+    if (!trimmedUsername) {
+        return "Indica usuario";
+    }
+    
+    if (!trimmedPassword) {
+        return "Indica contraseña";
+    }
+    
+    return null; // Válido
+};

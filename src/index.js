@@ -2,11 +2,12 @@
 
 // Importar todas las funciones de los módulos.
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal } from './ui/modal.js';
-import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity } from './ui/validation.js';
-import { createUser } from './api/supabase.js';
+import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
+import { createUser, loginUser } from './api/supabase.js';
 
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
+    // Elementos del formulario de registro
     const createBtn = document.getElementById('btn-save-new-user');
     const passwordInput = document.getElementById('new-user-password');
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
@@ -16,6 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeNewUserModalBtn = document.getElementById('btn-close-new-user-modal');
     const closeSuccessModalBtn = document.getElementById('btn-close-success-modal');
     const cancelNewUserBtn = document.getElementById('btn-cancel-new-user');
+
+    // Elementos del formulario de login
+    const loginBtn = document.getElementById('btn-login');
+    const loginUsernameInput = document.getElementById('login-username');
+    const loginPasswordInput = document.getElementById('login-password');
+    const loginErrorMessage = document.getElementById('login-error-message');
+    const loginScreen = document.getElementById('screen-login');
+    const mainScreen = document.getElementById('screen-main');
 
     const handleRegisterSubmit = async (event) => {
         event.preventDefault(); // Prevenir el envío por defecto del formulario
@@ -64,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Usuario creado correctamente:", result.user);
                 hideNewUserModal();
                 showUserCreatedSuccessModal();
-                registerForm.reset(); // Limpiar el formulario
+                // Los campos se limpian automáticamente en hideNewUserModal()
             } else {
                  throw new Error(result.error || "Error desconocido al crear el usuario.");
             }
@@ -79,6 +88,66 @@ document.addEventListener('DOMContentLoaded', () => {
             createBtn.innerHTML = 'Crear Usuario';
             createBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             checkFormValidity();
+        }
+    };
+
+    // Función para manejar el login
+    const handleLogin = async (event) => {
+        event.preventDefault();
+        
+        const username = loginUsernameInput.value;
+        const password = loginPasswordInput.value;
+        
+        // Validar campos
+        const validationError = validateLoginFields(username, password);
+        if (validationError) {
+            loginErrorMessage.textContent = validationError;
+            loginErrorMessage.classList.remove('hidden');
+            return;
+        }
+        
+        // Limpiar errores previos
+        loginErrorMessage.textContent = '';
+        loginErrorMessage.classList.add('hidden');
+        
+        try {
+            // Deshabilitar botón durante el proceso
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = 'Iniciando sesión...';
+            loginBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            
+            // Convertir username a email si es necesario
+            const email = await transformUsernameToEmail(username);
+            
+            // Intentar login
+            const result = await loginUser(email, password);
+            
+            if (result.success) {
+                console.log('Login exitoso:', result.user);
+                
+                // Redirigir a la página principal
+                loginScreen.classList.add('hidden');
+                mainScreen.classList.remove('hidden');
+                
+                // Limpiar formulario
+                loginUsernameInput.value = '';
+                loginPasswordInput.value = '';
+                
+            } else {
+                // Error de credenciales
+                loginErrorMessage.textContent = 'Credenciales no válidas';
+                loginErrorMessage.classList.remove('hidden');
+            }
+            
+        } catch (error) {
+            console.error('Error en login:', error);
+            loginErrorMessage.textContent = 'Credenciales no válidas';
+            loginErrorMessage.classList.remove('hidden');
+        } finally {
+            // Rehabilitar botón
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = 'Iniciar Sesión';
+            loginBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         }
     };
 
@@ -124,5 +193,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // IMPORTANTE: Event listener para el botón de crear usuario
     if (createBtn) {
         createBtn.addEventListener('click', handleRegisterSubmit);
+    }
+
+    // Event listener para el botón de login
+    if (loginBtn) {
+        loginBtn.addEventListener('click', handleLogin);
+    }
+
+    // Event listeners para limpiar errores de login al escribir
+    if (loginUsernameInput) {
+        loginUsernameInput.addEventListener('input', () => {
+            if (loginErrorMessage && !loginErrorMessage.classList.contains('hidden')) {
+                loginErrorMessage.classList.add('hidden');
+            }
+        });
+    }
+
+    if (loginPasswordInput) {
+        loginPasswordInput.addEventListener('input', () => {
+            if (loginErrorMessage && !loginErrorMessage.classList.contains('hidden')) {
+                loginErrorMessage.classList.add('hidden');
+            }
+        });
     }
 });

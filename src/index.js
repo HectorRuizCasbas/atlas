@@ -4,6 +4,7 @@
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
 import { createUser, loginUser } from './api/supabase.js';
+import { initializeTaskManagement } from './ui/tasks.js';
 
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
@@ -216,4 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Inicializar la gestión de tareas
+    initializeTaskManagement();
 });

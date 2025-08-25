@@ -1,7 +1,8 @@
 // src/api/supabase.js
 
-// URL del endpoint de la Función Edge. 
-const SUPABASE_EDGE_FUNCTION_URL = 'https://upbgpmcibngxukwaaiqh.supabase.co/functions/v1/create-user';
+// URLs de los endpoints de las Funciones Edge
+const SUPABASE_CREATE_USER_URL = 'https://upbgpmcibngxukwaaiqh.supabase.co/functions/v1/create-user';
+const SUPABASE_CREATE_TASK_URL = 'https://upbgpmcibngxukwaaiqh.supabase.co/functions/v1/create-task';
 
 // IMPORTANTE: Reemplaza con tu ANON KEY de Supabase (no la service role key)
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwYmdwbWNpYm5neHVrd2FhaXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NTgxNzksImV4cCI6MjA3MTUzNDE3OX0.i-rR4f5P4RNXPppcq1VxKyyeZdKE7yFPPOa96slVw94';
@@ -44,7 +45,7 @@ export const loginUser = async (email, password) => {
  */
 export const createUser = async (userData) => {
     try {
-        const response = await fetch(SUPABASE_EDGE_FUNCTION_URL, {
+        const response = await fetch(SUPABASE_CREATE_USER_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -65,6 +66,43 @@ export const createUser = async (userData) => {
         return result;
     } catch (error) {
         console.error('Error en la petición a la API:', error);
+        throw error;
+    }
+};
+
+/**
+ * Crea una nueva tarea usando la función Edge de Supabase
+ * @param {object} taskData Los datos de la tarea (titulo, descripcion, prioridad, asignado_a, privada)
+ * @returns {Promise<object>} Una promesa que resuelve con la respuesta de la API
+ */
+export const createTask = async (taskData) => {
+    try {
+        // Obtener el token de la sesión actual
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+            throw new Error('No hay sesión activa');
+        }
+
+        const response = await fetch(SUPABASE_CREATE_TASK_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`,
+                'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify(taskData)
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Error desconocido al crear la tarea.');
+        }
+
+        return result;
+    } catch (error) {
+        console.error('Error en la petición para crear tarea:', error);
         throw error;
     }
 };

@@ -10,9 +10,10 @@ export const checkFormValidity = () => {
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const usernameInput = document.getElementById('new-user-username');
     const fullNameInput = document.getElementById('new-user-full-name');
+    const roleInput = document.getElementById('new-user-role');
     const saveButton = document.getElementById('btn-save-new-user');
 
-    if (!passwordInput || !confirmPasswordInput || !usernameInput || !fullNameInput || !saveButton) {
+    if (!passwordInput || !confirmPasswordInput || !usernameInput || !fullNameInput || !roleInput || !saveButton) {
         console.warn('Advertencia: No se encontraron todos los elementos del formulario para la validación.');
         return;
     }
@@ -21,12 +22,14 @@ export const checkFormValidity = () => {
     const confirmPassword = confirmPasswordInput.value;
     const username = usernameInput.value;
     const fullName = fullNameInput.value;
+    const role = roleInput.value;
 
     const isPasswordValid = password.length >= 6;
     const isPasswordConfirmed = (password === confirmPassword) && (confirmPassword.length > 0);
     const isUsernameValid = username.length > 0;
     const isFullNameValid = fullName.trim().length > 0;
-    const isFormValid = isPasswordValid && isPasswordConfirmed && isUsernameValid && isFullNameValid;
+    const isRoleValid = role.length > 0;
+    const isFormValid = isPasswordValid && isPasswordConfirmed && isUsernameValid && isFullNameValid && isRoleValid;
 
     if (isFormValid) {
         saveButton.disabled = false;
@@ -132,26 +135,26 @@ export const transformUsernameToEmail = async (username) => {
 };
 
 /**
- * Valida los campos del formulario de login
- * @param {string} username - Nombre de usuario o email
+ * Valida los campos de login y devuelve mensaje de error específico
+ * @param {string} username - Nombre de usuario
  * @param {string} password - Contraseña
  * @returns {string|null} - Mensaje de error o null si es válido
  */
 export const validateLoginFields = (username, password) => {
-    const trimmedUsername = username.trim();
-    const trimmedPassword = password.trim();
-    
-    if (!trimmedUsername && !trimmedPassword) {
+    // Si ambos campos están vacíos
+    if (!username.trim() && !password.trim()) {
         return "Indica usuario y contraseña";
     }
     
-    if (!trimmedUsername) {
-        return "Indica usuario";
-    }
-    
-    if (!trimmedPassword) {
+    // Si solo falta la contraseña
+    if (username.trim() && !password.trim()) {
         return "Indica contraseña";
     }
     
-    return null; // Válido
+    // Si solo falta el usuario
+    if (!username.trim() && password.trim()) {
+        return "Indica usuario";
+    }
+    
+    return null; // Campos válidos
 };

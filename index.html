@@ -969,11 +969,30 @@
                 <p id="new-user-password-help" class="text-xs mt-1 text-slate-400">La contraseña debe tener al menos 6 caracteres</p>
             </div>
             
-            <div class="mb-6">
+            <div class="mb-4">
                 <label for="new-user-confirm-password" class="block text-sm font-medium mb-2">Confirmar Contraseña:</label>
                 <input type="password" id="new-user-confirm-password" placeholder="Confirma la contraseña"
                        class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <p id="new-user-confirm-password-help" class="text-xs mt-1 text-slate-400">Las contraseñas deben coincidir</p>
+            </div>
+            
+            <div class="mb-4">
+                <label for="new-user-role" class="block text-sm font-medium mb-2">Rol del Usuario:</label>
+                <select id="new-user-role" class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="Usuario">Usuario</option>
+                    <option value="Coordinador">Coordinador</option>
+                    <option value="Responsable">Responsable</option>
+                    <option value="Administrador">Administrador</option>
+                </select>
+            </div>
+            
+            <div class="mb-6">
+                <label for="new-user-department" class="block text-sm font-medium mb-2">Departamento (Opcional):</label>
+                <select id="new-user-department" class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Sin departamento</option>
+                    <!-- Los departamentos se cargarán dinámicamente -->
+                </select>
+                <p class="text-xs mt-1 text-slate-400">Los usuarios sin departamento tienen limitaciones en visibilidad</p>
             </div>
             
             <div id="form-error-message" class="text-rose-400 text-sm mb-4 hidden">

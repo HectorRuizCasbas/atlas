@@ -121,7 +121,17 @@ export const getCurrentUserProfile = async () => {
 
         const { data: profile, error } = await supabaseClient
             .from('profiles')
-            .select('id, username, full_name, supervisedUsers')
+            .select(`
+                id, 
+                username, 
+                full_name, 
+                role, 
+                email,
+                departamento_id,
+                supervisedUsers,
+                lastActivity,
+                departamento:departamento_id(id, nombre, descripcion)
+            `)
             .eq('id', session.user.id)
             .single();
 
@@ -384,4 +394,112 @@ export const subscribeToTaskHistory = (taskId, callback) => {
             }
         )
         .subscribe();
+};
+
+/**
+ * Obtiene todos los departamentos disponibles
+ * @returns {Promise<Array>} - Lista de departamentos
+ */
+export const getDepartments = async () => {
+    try {
+        const { data: departments, error } = await supabaseClient
+            .from('departamentos')
+            .select('id, nombre, descripcion')
+            .order('nombre');
+
+        if (error) {
+            throw new Error('Error obteniendo departamentos');
+        }
+
+        return departments || [];
+    } catch (error) {
+        console.error('Error obteniendo departamentos:', error);
+        throw error;
+    }
+};
+
+/**
+ * Obtiene usuarios según los permisos del usuario actual
+ * @returns {Promise<Array>} - Lista de usuarios visibles
+ */
+export const getVisibleUsers = async () => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        let query = supabaseClient
+            .from('profiles')
+            .select(`
+                id, 
+                username, 
+                full_name, 
+                role, 
+                email,
+                departamento_id,
+                lastActivity,
+                departamento:departamento_id(id, nombre, descripcion)
+            `);
+
+        // Aplicar filtros según el rol del usuario
+        if (currentProfile.role === 'Administrador') {
+            // Admins pueden ver todos los usuarios
+            query = query.order('username');
+        } else if (currentProfile.role === 'Responsable' || currentProfile.role === 'Coordinador') {
+            // Responsables y coordinadores ven usuarios de su departamento
+            if (currentProfile.departamento_id) {
+                query = query.eq('departamento_id', currentProfile.departamento_id).order('username');
+            } else {
+                // Si no tiene departamento, solo se ve a sí mismo
+                query = query.eq('id', currentProfile.id);
+            }
+        } else {
+            // Usuarios normales solo se ven a sí mismos
+            query = query.eq('id', currentProfile.id);
+        }
+
+        const { data: users, error } = await query;
+
+        if (error) {
+            throw new Error('Error obteniendo usuarios');
+        }
+
+        return users || [];
+    } catch (error) {
+        console.error('Error obteniendo usuarios visibles:', error);
+        throw error;
+    }
+};
+
+/**
+ * Actualiza la última actividad del usuario actual
+ * @returns {Promise<void>}
+ */
+export const updateLastActivity = async () => {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+            return;
+        }
+
+        await supabaseClient
+            .from('profiles')
+            .update({ lastActivity: new Date().toISOString() })
+            .eq('id', session.user.id);
+
+    } catch (error) {
+        console.error('Error actualizando última actividad:', error);
+    }
+};
+
+/**
+ * Cierra la sesión del usuario actual
+ * @returns {Promise<void>}
+ */
+export const logoutUser = async () => {
+    try {
+        await supabaseClient.auth.signOut();
+    } catch (error) {
+        console.error('Error cerrando sesión:', error);
+        throw error;
+    }
 };

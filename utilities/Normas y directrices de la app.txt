@@ -1,0 +1,146 @@
+NORMAS Y DIRECTRICES DE LA APP DE GESTIÓN DE TAREAS
+===================================================
+
+1) HERRAMIENTAS
+---------------
+- Supabase será la base de datos y backend. Toda la información de la aplicación se gestionará a través de esta plataforma.
+
+
+2) MODELO DE DATOS
+------------------
+- Departamento
+  - Puede contener muchos usuarios.
+  - Puede contener muchas tareas.
+
+- Usuario
+  - Pertenece a un único departamento.
+  - Puede tener muchas tareas asignadas.
+
+- Tarea
+  - Pertenece a un único departamento.
+  - Está asignada a un único usuario (opcionalmente puede estar “sin asignar”).
+
+
+3) PANTALLAS DE LA APP
+----------------------
+- Inicio de sesión
+  - Registro de nuevo usuario.
+  - Login de usuario existente.
+
+- Tareas
+  - Crear tarea.
+  - Modificar tarea.
+
+- Departamentos (solo administradores)
+  - Crear nuevo departamento (obligatorio mínimo un responsable).
+  - Modificar roles de usuarios dentro del departamento.
+
+- Usuarios (solo administradores)
+  - Modificar tipo de usuario, nombre completo y contraseña.
+  - Eliminar usuario (el “usuario de acceso” no es modificable).
+
+
+4) GESTIÓN DE ACCESO Y REGISTRO
+-------------------------------
+- Alta de usuario
+  - Campos requeridos: nombre completo, usuario de acceso, departamento, contraseña y confirmación de contraseña.
+  - Al registrarse, se notifica automáticamente a los responsables y coordinadores del departamento elegido.
+
+- Estados del registro
+  - Pendiente:
+    - El usuario aún no puede iniciar sesión.
+    - Se muestra un modal indicando que la solicitud está en revisión.
+  - Aceptado:
+    - El usuario entra al departamento y puede operar con normalidad.
+  - Rechazado:
+    - Se muestra un modal con el mensaje:
+      "El responsable ha rechazado la petición. Vuelva a crear usuario indicando nuevo departamento o, si desea trabajar de manera individual, no seleccione ninguno."
+    - Tras este modal, el usuario es ELIMINADO de la base de datos para no dejar registros residuales.
+
+
+5) ROLES DE USUARIO
+-------------------
+- Administrador
+  - Acceso a todas las pantallas y configuraciones.
+  - Visualización de todas las tareas (excepto privadas).
+  - Puede borrar tareas de cualquier usuario.
+
+- Responsable
+  - Configurable por un administrador.
+  - Acceso a pantalla de departamentos.
+  - Visualización de todas las tareas del departamento (excepto privadas).
+  - Puede asignar tareas a otros departamentos.
+
+- Coordinador
+  - Configurable por un responsable.
+  - Visualización de todas las tareas del departamento (excepto privadas).
+  - Puede asignar tareas a otros departamentos.
+
+- Usuario estándar
+  - Visibilidad de sus propias tareas creadas y tareas asignadas.
+  - Nunca puede ver tareas privadas de otros.
+
+
+6) DEPARTAMENTOS
+----------------
+- La creación de departamentos la realizan únicamente administradores.
+- Debe existir al menos un responsable (pueden existir varios).
+- Puede tener cero o más coordinadores.
+- Puede tener cero o más usuarios estándar.
+
+
+7) TAREAS
+---------
+- Atributos principales
+  - Título (texto).
+  - Descripción (texto).
+  - Creador (usuario).
+  - Asignado a (usuario, opcional).
+  - Estado: Sin iniciar | En progreso | En espera | Finalizada.
+  - Prioridad: Baja | Media | Alta | Urgente.
+  - Privacidad: Pública | Privada.
+
+- Creación
+  - Una tarea puede ser pública o privada.
+  - Reglas de privacidad:
+    - Solo se puede marcar una tarea como PRIVADA si:
+      (a) Tú eres el creador de la tarea, y
+      (b) La tarea está asignada a TI MISMO.
+    - Una tarea privada NO puede cambiar su asignación de usuario mientras sea privada.
+  - Creación por responsables/coordinadores:
+    - Si la tarea se crea para su PROPIO departamento, pueden elegir directamente el usuario asignado en el momento de la creación.
+    - Si la tarea se crea para OTRO departamento, la tarea queda "sin asignar".
+      - En ese caso, solo responsables y coordinadores del departamento destino la verán hasta que la asignen a un usuario.
+
+- Modificación
+  - Cambiar asignación (NO permitido si la tarea es privada).
+  - Cambiar prioridad.
+  - Cambiar estado.
+  - Cambiar privacidad (solo el creador y solo si la tarea sigue asignada a él mismo).
+
+- Historial y chat
+  - Implementación unificada:
+    - Una sola tabla (task_history) contiene tanto historial de sistema como mensajes de chat.
+    - Orden cronológico automático por fecha de creación.
+    - Diferenciación por campo_modificado: 'chat_message' para mensajes, otros valores para cambios de sistema.
+  - Historial de sistema:
+    - Registra todos los cambios desde la creación hasta la finalización.
+    - Se muestra en cursiva (ejemplo: [Héctor Ruiz] Tarea creada, 08/08/2025, 09:31).
+  - Chat por tarea:
+    - Mensajes propios: alineados a la derecha, con burbuja de color más destacado.
+    - Mensajes de otros usuarios: alineados a la izquierda, con burbuja de color más neutro.
+    - Integrado cronológicamente con el historial de cambios.
+
+- Eliminación
+  - El creador puede eliminar su propia tarea.
+  - Un administrador puede eliminar cualquier tarea.
+  - Al eliminar una tarea se borran todos los registros asociados (historial, chat, etc.).
+
+
+8) NOTIFICACIONES
+-----------------
+- Se muestran en un icono de campana en la parte superior derecha cuando:
+  - Se asigna una tarea a tu usuario.
+  - Se modifica una tarea sobre la que tienes visibilidad.
+  - Un nuevo usuario solicita acceso a tu departamento (solo responsables y coordinadores).
+  - Se finaliza una tarea que tú has creado.

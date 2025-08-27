@@ -3,7 +3,7 @@
 // Importar todas las funciones de los módulos.
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
-import { createUser, loginUser } from './api/supabase.js';
+import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser } from './api/supabase.js';
 import { initializeTaskManagement } from './ui/tasks.js';
 
 // Adjuntar event listeners.
@@ -38,11 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
         const fullName = fullNameInput.value;
+        const role = document.getElementById('new-user-role').value;
+        const departmentId = document.getElementById('new-user-department').value;
         
-        console.log('Datos del formulario:', { username, password: '***', confirmPassword: '***' });
+        console.log('Datos del formulario:', { username, password: '***', confirmPassword: '***', fullName, role, departmentId });
         
         // Final frontend validation before sending
-        if (password !== confirmPassword || password.length < 6 || username.length === 0 || fullName.trim().length === 0) {
+        if (password !== confirmPassword || password.length < 6 || username.length === 0 || fullName.trim().length === 0 || role.length === 0) {
             console.log('Validación fallida');
             formError.textContent = "Por favor, revisa los campos del formulario.";
             formError.style.display = 'block';
@@ -70,7 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 email: email,
                 password: password,
                 username: username,
-                full_name: fullName.trim()
+                full_name: fullName.trim(),
+                role: role,
+                departamento_id: departmentId || null
             });
             
             if (result && result.success) {
@@ -92,6 +96,39 @@ document.addEventListener('DOMContentLoaded', () => {
             createBtn.innerHTML = 'Crear Usuario';
             createBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             checkFormValidity();
+        }
+    };
+
+    // Función para inicializar la sesión del usuario
+    const initializeUserSession = async () => {
+        try {
+            const profile = await getCurrentUserProfile();
+            
+            // Actualizar elementos de la interfaz con información del usuario
+            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management');
+            currentUserElements.forEach(element => {
+                if (element) {
+                    element.textContent = profile.full_name || profile.username;
+                }
+            });
+            
+            // Actualizar última actividad
+            await updateLastActivity();
+            
+            // Mostrar/ocultar opciones según el rol
+            const userManagementBtn = document.getElementById('btn-user-management');
+            if (userManagementBtn) {
+                if (profile.role === 'Administrador') {
+                    userManagementBtn.classList.remove('hidden');
+                } else {
+                    userManagementBtn.classList.add('hidden');
+                }
+            }
+            
+            console.log('Sesión inicializada para:', profile);
+            
+        } catch (error) {
+            console.error('Error inicializando sesión:', error);
         }
     };
 
@@ -129,6 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 console.log('Login exitoso:', result.user);
                 
+                // Obtener y mostrar información del usuario
+                await initializeUserSession();
+                
                 // Redirigir a la página principal
                 loginScreen.classList.add('hidden');
                 mainScreen.classList.remove('hidden');
@@ -157,6 +197,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listeners para validación en tiempo real
     if (passwordInput && confirmPasswordInput && usernameInput && fullNameInput) {
+        const roleInput = document.getElementById('new-user-role');
+        
         passwordInput.addEventListener('input', () => {
             validatePasswordLength();
             validatePasswordMatch();
@@ -168,11 +210,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         usernameInput.addEventListener('input', checkFormValidity);
         fullNameInput.addEventListener('input', checkFormValidity);
+        
+        if (roleInput) {
+            roleInput.addEventListener('change', checkFormValidity);
+        }
     }
     
+    // Función para cargar departamentos en el select
+    const loadDepartments = async () => {
+        try {
+            const departments = await getDepartments();
+            const departmentSelect = document.getElementById('new-user-department');
+            
+            if (departmentSelect) {
+                // Limpiar opciones existentes excepto la primera
+                departmentSelect.innerHTML = '<option value="">Sin departamento</option>';
+                
+                // Agregar departamentos
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.nombre;
+                    departmentSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error cargando departamentos:', error);
+        }
+    };
+
     // Event listener para mostrar el modal
     if (showNewUserModalBtn) {
-        showNewUserModalBtn.addEventListener('click', () => {
+        showNewUserModalBtn.addEventListener('click', async () => {
+            await loadDepartments();
             showNewUserModal();
             checkFormValidity();
         });
@@ -221,6 +291,48 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Función para manejar logout
+    const handleLogout = async () => {
+        try {
+            await logoutUser();
+            
+            // Redirigir a pantalla de login
+            const loginScreen = document.getElementById('screen-login');
+            const mainScreen = document.getElementById('screen-main');
+            const userManagementScreen = document.getElementById('screen-user-management');
+            
+            if (loginScreen && mainScreen) {
+                mainScreen.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+            }
+            
+            if (userManagementScreen) {
+                userManagementScreen.classList.add('hidden');
+            }
+            
+            // Limpiar información del usuario
+            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management');
+            currentUserElements.forEach(element => {
+                if (element) {
+                    element.textContent = '';
+                }
+            });
+            
+            console.log('Logout exitoso');
+            
+        } catch (error) {
+            console.error('Error en logout:', error);
+        }
+    };
+
+    // Event listeners para botones de logout
+    const logoutButtons = document.querySelectorAll('#btn-logout, #btn-logout-user-management');
+    logoutButtons.forEach(button => {
+        if (button) {
+            button.addEventListener('click', handleLogout);
+        }
+    });
 
     // Inicializar la gestión de tareas
     initializeTaskManagement();

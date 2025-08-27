@@ -1,0 +1,114 @@
+PLANNING DE DESARROLLO DE LA APP DE GESTIÓN DE TAREAS
+
+Objetivo: Crear una app completa de gestión de tareas con roles, departamentos, visibilidad, chat, historial, notificaciones, filtros y control de privacidad, usando Supabase como backend.
+
+FASE 1: ESTRUCTURA Y MODELO DE DATOS
+------------------------------------
+1. Crear esquema de Supabase:
+   - Tablas: Usuarios (profiles), Departamentos, Tareas (tasks), Historial unificado (task_history), Notificaciones.
+   - Campos según directrices v2.
+   - Relaciones:
+     - Usuario -> Departamento
+     - Tarea -> Departamento
+     - Tarea -> Usuario (asignado)
+     - Historial unificado (task_history) -> Tarea (incluye chat y cambios de sistema)
+     - Notificaciones -> Usuario
+
+2. Definir roles y permisos en la base de datos:
+   - Administrador, Responsable, Coordinador, Usuario estándar.
+   - Control de visibilidad de tareas (privadas vs públicas).
+   - Permisos CRUD según rol.
+
+FASE 2: LOGIN Y GESTIÓN DE USUARIOS
+-----------------------------------
+1. Crear pantalla de login y registro:
+   - Campos: nombre completo, usuario de acceso, contraseña, departamento (opcional).
+   - Validación de contraseña y confirmación.
+
+2. Implementar flujo de aprobación de usuarios:
+   - Estados: Pendiente, Aceptado, Rechazado.
+   - Notificaciones automáticas a responsables/coordinadores.
+   - Rechazo → eliminar usuario de la base de datos.
+
+3. Gestionar usuarios sin departamento:
+   - Limitaciones en visibilidad y asignación de tareas.
+
+4. Filtrado de usuarios:
+   - Por nombre.
+   - Por departamento.
+
+FASE 3: DEPARTAMENTOS
+---------------------
+1. Pantalla de departamentos (solo admin):
+   - Crear, modificar, asignar roles.
+   - Validaciones: mínimo un responsable.
+   - Filtrado por nombre y por usuario.
+
+FASE 4: TAREAS
+---------------
+1. Pantalla de creación de tareas:
+   - Campos: título, descripción, asignado a, estado, prioridad, privacidad, fecha límite.
+   - Reglas de privacidad:
+     - Solo creador + asignado a sí mismo puede marcar privada.
+   - Si se crea para propio departamento → elegir usuario asignado desde el inicio.
+   - Si se crea para otro departamento → queda sin asignar.
+
+2. Modificación de tareas:
+   - Cambiar estado, prioridad, asignación (excepto tareas privadas), privacidad (si creador + asignado a sí mismo).
+   - Marcar como archivada/desarchivada.
+
+3. Eliminación y archivado:
+   - Creadores pueden eliminar sus tareas.
+   - Admin puede eliminar cualquier tarea.
+   - Al eliminar → borrar registros (historial, chat, notificaciones).
+
+4. Filtros de tareas:
+   - Por título / descripción.
+   - Por estado.
+   - Por asignado (solo admins, responsables, coordinadores).
+
+5. Vista calendario por fechas límite.
+
+FASE 5: HISTORIAL Y CHAT
+------------------------
+1. Historial unificado (task_history):
+   - Registrar cambios de sistema: estado, prioridad, asignación, privacidad.
+   - Registrar mensajes de chat con campo_modificado = 'chat_message'.
+   - Orden cronológico automático por created_at.
+   - Mostrar historial en cursiva, chat como burbujas.
+
+2. Visualización integrada:
+   - Mensajes propios → derecha, color destacado.
+   - Mensajes de otros → izquierda, color neutro.
+   - Cambios de sistema → centro, cursiva.
+
+FASE 6: NOTIFICACIONES
+----------------------
+1. Icono de campana.
+2. Tipos:
+   - Nueva tarea asignada.
+   - Modificación de tarea con visibilidad.
+   - Solicitud de acceso de usuario.
+   - Finalización de tarea propia.
+3. Permitir marcar notificaciones como leídas.
+
+FASE 7: AJUSTES Y DETALLES FINALES
+-----------------------------------
+1. Validaciones y seguridad:
+   - Contraseñas, reglas de acceso.
+   - Privacidad de tareas.
+   - Usuarios sin departamento.
+
+2. Tests funcionales:
+   - Crear, modificar, asignar, eliminar tareas.
+   - Flujo de alta de usuario.
+   - Roles y permisos.
+   - Notificaciones y filtros.
+
+3. Optimización:
+   - UX: filtros, búsqueda, vistas.
+   - Responsividad y apariencia (Tailwind).
+
+4. Documentación final para IA:
+   - Guardar todo este planning en TXT.
+   - Señalar qué fases ya están hechas y cuáles quedan pendientes.

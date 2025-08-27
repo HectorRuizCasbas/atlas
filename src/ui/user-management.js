@@ -193,60 +193,7 @@ function clearUserFilters() {
     renderUsersTable();
 }
 
-// Función para agregar nuevo usuario
-async function addUser() {
-    const username = document.getElementById('user-management-username-add').value.trim();
-    const password = document.getElementById('user-management-password-add').value;
-    const role = document.getElementById('user-management-role-add').value;
-    const fullName = document.getElementById('user-management-full-name-add').value.trim();
-    const departmentId = document.getElementById('user-management-department-add').value || null;
-    
-    // Validaciones básicas
-    if (!username || !password || !fullName) {
-        showToast('Por favor, completa todos los campos obligatorios', 'error');
-        return;
-    }
-    
-    if (password.length < 6) {
-        showToast('La contraseña debe tener al menos 6 caracteres', 'error');
-        return;
-    }
-    
-    try {
-        // Transformar username a email
-        const email = username.includes('@') ? username : `${username}@zelenza.com`;
-        
-        const result = await createUser({
-            email: email,
-            password: password,
-            username: username,
-            full_name: fullName,
-            role: role,
-            departamento_id: departmentId
-        });
-        
-        if (result && result.success) {
-            showToast('Usuario creado correctamente', 'success');
-            
-            // Limpiar formulario
-            document.getElementById('user-management-username-add').value = '';
-            document.getElementById('user-management-password-add').value = '';
-            document.getElementById('user-management-role-add').value = 'Usuario';
-            document.getElementById('user-management-full-name-add').value = '';
-            document.getElementById('user-management-department-add').value = '';
-            
-            // Recargar usuarios
-            await loadUsers();
-            renderUsersTable();
-        } else {
-            throw new Error(result.error || 'Error desconocido al crear el usuario');
-        }
-        
-    } catch (error) {
-        console.error('Error creando usuario:', error);
-        showToast(error.message || 'Error al crear el usuario', 'error');
-    }
-}
+// Función removida - ahora se usa el modal de nuevo usuario desde login
 
 // Función para editar usuario
 window.editUser = async function(userId) {
@@ -416,10 +363,14 @@ export function initializeUserManagement() {
         backToMainBtn.addEventListener('click', showMainScreen);
     }
     
-    // Event listeners para formulario de agregar usuario
-    const addUserBtn = document.getElementById('btn-add-user');
-    if (addUserBtn) {
-        addUserBtn.addEventListener('click', addUser);
+    // Event listener para botón de crear nuevo usuario (modal)
+    const showNewUserModalBtn = document.getElementById('btn-show-new-user-modal-admin');
+    if (showNewUserModalBtn) {
+        showNewUserModalBtn.addEventListener('click', () => {
+            // Mostrar el modal de nuevo usuario (mismo que desde login)
+            document.getElementById('new-user-modal').classList.remove('hidden');
+            document.getElementById('new-user-modal').classList.add('flex');
+        });
     }
     
     // Event listeners para filtros

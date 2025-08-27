@@ -114,7 +114,7 @@ Deno.serve(async (req)=>{
       full_name: full_name,
       role: role,
       departamento_id: departamento_id || null,
-      lastActivity: new Date().toISOString()
+      lastactivity: new Date().toISOString()
     }).select().single();
     if (profileError) {
       console.error('Error creando perfil:', profileError);

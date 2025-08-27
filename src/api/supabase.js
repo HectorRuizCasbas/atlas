@@ -132,7 +132,7 @@ export const getCurrentUserProfile = async () => {
                 role, 
                 email,
                 departamento_id,
-                lastActivity,
+                lastactivity,
                 departamento:departamento_id(id, nombre, descripcion)
             `)
             .eq('id', session.user.id)
@@ -446,7 +446,7 @@ export const getVisibleUsers = async () => {
                 role, 
                 email,
                 departamento_id,
-                lastActivity,
+                lastactivity,
                 departamento:departamento_id(id, nombre, descripcion)
             `);
 
@@ -494,7 +494,7 @@ export const updateLastActivity = async () => {
 
         await supabaseClient
             .from('profiles')
-            .update({ lastActivity: new Date().toISOString() })
+            .update({ lastactivity: new Date().toISOString() })
             .eq('id', session.user.id);
 
     } catch (error) {
@@ -535,7 +535,7 @@ export const getAllUsers = async () => {
                 role, 
                 email,
                 departamento_id,
-                lastActivity,
+                lastactivity,
                 departamento:departamento_id(id, nombre, descripcion)
             `)
             .order('username');

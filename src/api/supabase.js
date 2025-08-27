@@ -132,7 +132,6 @@ export const getCurrentUserProfile = async () => {
                 role, 
                 email,
                 departamento_id,
-                supervisedUsers,
                 lastActivity,
                 departamento:departamento_id(id, nombre, descripcion)
             `)
@@ -157,15 +156,12 @@ export const getCurrentUserProfile = async () => {
 export const getSupervisedUsers = async () => {
     try {
         const currentProfile = await getCurrentUserProfile();
-        const supervisedUserIds = currentProfile.supervisedUsers || [];
         
-        // Agregar el usuario actual a la lista
-        const allUserIds = [currentProfile.id, ...supervisedUserIds];
-
+        // Solo devolver el usuario actual ya que no hay supervisedUsers
         const { data: users, error } = await supabaseClient
             .from('profiles')
             .select('id, username, full_name')
-            .in('id', allUserIds);
+            .eq('id', currentProfile.id);
 
         if (error) {
             throw new Error('Error obteniendo usuarios supervisados');
@@ -187,10 +183,9 @@ export const getSupervisedUsers = async () => {
 export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) => {
     try {
         const currentProfile = await getCurrentUserProfile();
-        const supervisedUserIds = currentProfile.supervisedUsers || [];
         
-        // IDs de usuarios cuyas tareas puede ver: él mismo + supervisados
-        const visibleUserIds = [currentProfile.id, ...supervisedUserIds];
+        // Solo puede ver sus propias tareas ya que no hay supervisedUsers
+        const visibleUserIds = [currentProfile.id];
 
         let query = supabaseClient
             .from('tasks')
@@ -541,7 +536,6 @@ export const getAllUsers = async () => {
                 email,
                 departamento_id,
                 lastActivity,
-                supervisedUsers,
                 departamento:departamento_id(id, nombre, descripcion)
             `)
             .order('username');

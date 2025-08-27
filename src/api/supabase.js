@@ -497,13 +497,24 @@ export const updateLastActivity = async () => {
  */
 export const getAllUsers = async () => {
     try {
+        console.log('getAllUsers: Iniciando...');
+        
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        console.log('getAllUsers: Sesión obtenida:', session ? 'Activa' : 'No activa');
+        
+        if (!session) {
+            throw new Error('No hay sesión activa');
+        }
+
         const currentProfile = await getCurrentUserProfile();
+        console.log('getAllUsers: Perfil actual:', currentProfile);
         
         // Solo administradores pueden ver todos los usuarios
         if (currentProfile.role !== 'Administrador') {
             throw new Error('No tienes permisos para ver todos los usuarios');
         }
 
+        console.log('getAllUsers: Consultando base de datos...');
         const { data: users, error } = await supabaseClient
             .from('profiles')
             .select(`
@@ -519,10 +530,14 @@ export const getAllUsers = async () => {
             `)
             .order('username');
 
+        console.log('getAllUsers: Respuesta de BD:', { users, error });
+
         if (error) {
-            throw new Error('Error obteniendo usuarios');
+            console.error('getAllUsers: Error de BD:', error);
+            throw new Error(`Error obteniendo usuarios: ${error.message}`);
         }
 
+        console.log('getAllUsers: Usuarios obtenidos:', users?.length || 0);
         return users || [];
     } catch (error) {
         console.error('Error obteniendo todos los usuarios:', error);

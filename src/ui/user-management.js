@@ -33,24 +33,31 @@ export function showMainScreen() {
 // Función para cargar todos los datos necesarios
 async function loadUserManagementData() {
     try {
+        console.log('Iniciando carga de datos de gestión de usuarios...');
         await Promise.all([
             loadUsers(),
             loadDepartments()
         ]);
+        console.log('Datos cargados, renderizando tabla...');
         renderUsersTable();
     } catch (error) {
         console.error('Error cargando datos de gestión de usuarios:', error);
-        showToast('Error cargando datos de usuarios', 'error');
+        console.error('Detalles del error:', error.message);
+        showToast(`Error cargando datos de usuarios: ${error.message}`, 'error');
     }
 }
 
 // Función para cargar usuarios
 async function loadUsers() {
     try {
+        console.log('Llamando a getAllUsers()...');
         currentUsers = await getAllUsers();
         console.log('Usuarios cargados:', currentUsers);
+        console.log('Número de usuarios:', currentUsers.length);
     } catch (error) {
         console.error('Error cargando usuarios:', error);
+        console.error('Tipo de error:', error.name);
+        console.error('Mensaje de error:', error.message);
         throw error;
     }
 }
@@ -108,13 +115,31 @@ function updateDepartmentSelects() {
 
 // Función para renderizar la tabla de usuarios
 function renderUsersTable() {
+    console.log('Renderizando tabla de usuarios...');
     const tbody = document.getElementById('users-table-body');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('No se encontró el elemento users-table-body');
+        return;
+    }
+    
+    console.log('currentUsers antes de filtrar:', currentUsers);
     
     // Aplicar filtros
     const filteredUsers = applyUserFilters();
+    console.log('Usuarios filtrados:', filteredUsers);
     
     tbody.innerHTML = '';
+    
+    if (filteredUsers.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="py-8 px-4 text-center text-slate-400">
+                    ${currentUsers.length === 0 ? 'No hay usuarios registrados' : 'No se encontraron usuarios con los filtros aplicados'}
+                </td>
+            </tr>
+        `;
+        return;
+    }
     
     filteredUsers.forEach(user => {
         const row = document.createElement('tr');
@@ -149,6 +174,8 @@ function renderUsersTable() {
         
         tbody.appendChild(row);
     });
+    
+    console.log('Tabla renderizada con', filteredUsers.length, 'usuarios');
 }
 
 // Función para obtener la clase CSS del badge según el rol

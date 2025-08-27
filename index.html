@@ -617,43 +617,40 @@
 
         <main class="flex-1 p-8 flex flex-col">
 
-        <div class="flex justify-between items-center mb-6">
-            <div class="bg-slate-800 p-6 rounded-xl shadow-lg flex-1 max-w-md">
-                <h2 class="text-xl font-semibold mb-4 text-emerald-300">Filtros de Usuarios</h2>
-                <div class="space-y-4">
-                    <div>
-                        <label for="filter-user-name" class="block text-sm font-medium mb-1">Buscar por Nombre:</label>
-                        <input type="text" id="filter-user-name" placeholder="Escribe el nombre del usuario"
-                               class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                    </div>
-                    <div>
-                        <label for="filter-user-role" class="block text-sm font-medium mb-1">Filtrar por Rol:</label>
-                        <select id="filter-user-role"
-                                class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="">Todos los Roles</option>
-                            <option value="Usuario">Usuario</option>
-                            <option value="Coordinador">Coordinador</option>
-                            <option value="Responsable">Responsable</option>
-                            <option value="Administrador">Administrador</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="filter-user-department" class="block text-sm font-medium mb-1">Filtrar por Departamento:</label>
-                        <select id="filter-user-department" class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                            <option value="">Todos los Departamentos</option>
-                            <!-- Los departamentos se cargarán dinámicamente -->
-                        </select>
-                    </div>
-                    <button id="btn-clear-user-filters"
-                            class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200 w-full">
-                        Limpiar Filtros
-                    </button>
+        <div class="bg-slate-800 p-6 rounded-xl shadow-lg mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-emerald-300">Filtros de Usuarios</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                    <label for="filter-user-name" class="block text-sm font-medium mb-1">Buscar por Nombre:</label>
+                    <input type="text" id="filter-user-name" placeholder="Escribe el nombre del usuario"
+                           class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label for="filter-user-role" class="block text-sm font-medium mb-1">Filtrar por Rol:</label>
+                    <select id="filter-user-role"
+                            class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Todos los Roles</option>
+                        <option value="Usuario">Usuario</option>
+                        <option value="Coordinador">Coordinador</option>
+                        <option value="Responsable">Responsable</option>
+                        <option value="Administrador">Administrador</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-user-department" class="block text-sm font-medium mb-1">Filtrar por Departamento:</label>
+                    <select id="filter-user-department" class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Todos los Departamentos</option>
+                        <!-- Los departamentos se cargarán dinámicamente -->
+                    </select>
                 </div>
             </div>
-            
-            <div class="ml-6">
+            <div class="flex justify-between items-center">
+                <button id="btn-clear-user-filters"
+                        class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                    Limpiar Filtros
+                </button>
                 <button id="btn-show-new-user-modal-admin" 
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center gap-2">
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200 flex items-center gap-2">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                         <circle cx="9" cy="7" r="4"/>

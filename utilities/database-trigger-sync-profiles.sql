@@ -12,7 +12,6 @@ BEGIN
     full_name,
     role,
     departamento_id,
-    supervisedUsers,
     lastActivity
   )
   VALUES (
@@ -26,7 +25,6 @@ BEGIN
       THEN (NEW.raw_user_meta_data->>'departamento_id')::uuid 
       ELSE NULL 
     END,
-    '[]'::jsonb,
     NOW()
   );
   RETURN NEW;

@@ -114,7 +114,6 @@ Deno.serve(async (req)=>{
       full_name: full_name,
       role: role,
       departamento_id: departamento_id || null,
-      supervisedUsers: [],
       lastActivity: new Date().toISOString()
     }).select().single();
     if (profileError) {

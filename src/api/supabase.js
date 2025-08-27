@@ -45,7 +45,7 @@ export const loginUser = async (email, password) => {
  */
 export const createUser = async (userData) => {
     try {
-        console.log('createUser: Enviando datos:', userData);
+        console.log('createUser: Enviando datos:', JSON.stringify(userData, null, 2));
         
         const response = await fetch(SUPABASE_CREATE_USER_URL, {
             method: 'POST',
@@ -59,7 +59,7 @@ export const createUser = async (userData) => {
 
         console.log('createUser: Response status:', response.status);
         const result = await response.json();
-        console.log('createUser: Response data:', result);
+        console.log('createUser: Response data:', JSON.stringify(result, null, 2));
         
         // Verificar si la respuesta fue exitosa (código de estado 200).
         if (!response.ok) {

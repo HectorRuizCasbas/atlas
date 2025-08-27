@@ -402,19 +402,31 @@ export const subscribeToTaskHistory = (taskId, callback) => {
  */
 export const getDepartments = async () => {
     try {
+        console.log('getDepartments: Iniciando consulta...');
+        
         const { data: departments, error } = await supabaseClient
             .from('departamentos')
             .select('id, nombre, descripcion')
             .order('nombre');
 
+        console.log('getDepartments: Respuesta de BD:', { departments, error });
+
         if (error) {
-            throw new Error('Error obteniendo departamentos');
+            console.error('getDepartments: Error de BD:', error);
+            // Si es un error de autenticación, devolver array vacío en lugar de fallar
+            if (error.message.includes('JWT') || error.message.includes('auth')) {
+                console.log('getDepartments: Error de autenticación, devolviendo array vacío');
+                return [];
+            }
+            throw new Error(`Error obteniendo departamentos: ${error.message}`);
         }
 
+        console.log('getDepartments: Departamentos obtenidos:', departments?.length || 0);
         return departments || [];
     } catch (error) {
         console.error('Error obteniendo departamentos:', error);
-        throw error;
+        // En caso de error, devolver array vacío para no romper la UI
+        return [];
     }
 };
 

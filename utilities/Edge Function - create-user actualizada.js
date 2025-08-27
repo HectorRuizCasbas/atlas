@@ -83,11 +83,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Crear usuario en Supabase Auth
+    // Crear usuario en Supabase Auth con metadata
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true
+      email_confirm: true,
+      user_metadata: {
+        username: username,
+        full_name: full_name,
+        role: role,
+        departamento_id: departamento_id
+      }
     })
 
     if (authError) {
@@ -112,35 +118,51 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Crear perfil en la tabla profiles
-    const { data: profileData, error: profileError } = await supabaseAdmin
+    // Esperar un momento para que el trigger cree el perfil automáticamente
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Verificar que el perfil se creó correctamente
+    let { data: profileData, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
-        id: authData.user.id,
-        username: username,
-        email: email,
-        full_name: full_name,
-        role: role,
-        departamento_id: departamento_id || null,
-        supervisedUsers: [], // Array vacío por defecto
-        lastActivity: new Date().toISOString()
-      })
-      .select()
+      .select('*')
+      .eq('id', authUser.user.id)
       .single()
 
-    if (profileError) {
-      console.error('Error creando perfil:', profileError)
+    if (profileError || !profileData) {
+      console.error('Error verificando perfil creado por trigger:', profileError)
       
-      // Si falla la creación del perfil, eliminar el usuario de Auth
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+      // Intentar crear manualmente como fallback
+      const { data: manualProfile, error: manualError } = await supabaseAdmin
+        .from('profiles')
+        .insert({
+          id: authUser.user.id,
+          username: username,
+          email: email,
+          full_name: full_name,
+          role: role,
+          departamento_id: departamento_id || null,
+          supervisedUsers: [], 
+          lastActivity: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (manualError) {
+        console.error('Error creando perfil manualmente:', manualError)
+        
+        // Si falla todo, eliminar el usuario de Auth
+        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        
+        return new Response(
+          JSON.stringify({ error: 'Error al crear perfil de usuario' }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500 
+          }
+        )
+      }
       
-      return new Response(
-        JSON.stringify({ error: 'Error al crear perfil de usuario' }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500 
-        }
-      )
+      profileData = manualProfile;
     }
 
     // Crear notificación de bienvenida
@@ -148,7 +170,7 @@ Deno.serve(async (req) => {
       await supabaseAdmin
         .from('notificaciones')
         .insert({
-          usuario_id: authData.user.id,
+          usuario_id: authUser.user.id,
           tipo: 'solicitud_acceso',
           mensaje: `¡Bienvenido a Atlas! Tu cuenta ha sido creada exitosamente como ${role}.`,
           leida: false
@@ -162,8 +184,8 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         user: {
-          id: authData.user.id,
-          email: authData.user.email,
+          id: authUser.user.id,
+          email: authUser.user.email,
           username: profileData.username,
           full_name: profileData.full_name,
           role: profileData.role,

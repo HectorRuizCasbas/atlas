@@ -111,7 +111,7 @@ export const validateEmailExists = async (email) => {
 };
 
 /**
- * Transforma un nombre de usuario en un correo electrónico de la empresa.
+ * Transforma un nombre de usuario en un correo electrónico de la empresa y valida su existencia.
  */
 export const transformUsernameToEmail = async (username) => {
     let email;
@@ -128,6 +128,13 @@ export const transformUsernameToEmail = async (username) => {
     }
     
     console.log(`Email generado: ${email}`);
+    
+    // Validar que el email existe
+    const emailExists = await validateEmailExists(email);
+    if (!emailExists) {
+        throw new Error(`El email ${email} no existe en el sistema`);
+    }
+    
     return email;
 };
 

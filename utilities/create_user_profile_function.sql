@@ -22,7 +22,7 @@ BEGIN
     full_name,
     role,
     departamento_id,
-    lastactivity
+    lastActivity
   ) VALUES (
     user_id,
     user_username,

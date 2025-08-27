@@ -107,6 +107,16 @@ Deno.serve(async (req)=>{
       });
     }
     // Crear perfil en la tabla profiles
+    console.log('Intentando crear perfil con datos:', {
+      id: authUser.user.id,
+      username: username,
+      email: email,
+      full_name: full_name,
+      role: role,
+      departamento_id: departamento_id || null,
+      lastActivity: new Date().toISOString()
+    });
+    
     const { data: profileData, error: profileError } = await supabaseAdmin.from('profiles').insert({
       id: authUser.user.id,
       username: username,
@@ -114,10 +124,19 @@ Deno.serve(async (req)=>{
       full_name: full_name,
       role: role,
       departamento_id: departamento_id || null,
-      lastactivity: new Date().toISOString()
+      lastActivity: new Date().toISOString()
     }).select().single();
     if (profileError) {
       console.error('Error creando perfil:', profileError);
+      console.error('Detalles del error:', JSON.stringify(profileError, null, 2));
+      console.error('Datos que se intentaron insertar:', {
+        id: authUser.user.id,
+        username: username,
+        email: email,
+        full_name: full_name,
+        role: role,
+        departamento_id: departamento_id || null
+      });
       // Si falla la creación del perfil, eliminar el usuario de auth
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       return new Response(JSON.stringify({

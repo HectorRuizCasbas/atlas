@@ -12,7 +12,7 @@ BEGIN
     full_name,
     role,
     departamento_id,
-    lastactivity
+    lastActivity
   )
   VALUES (
     NEW.id,

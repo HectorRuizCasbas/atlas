@@ -132,8 +132,8 @@ export const getCurrentUserProfile = async () => {
                 role, 
                 email,
                 departamento_id,
-                lastactivity,
-                departamento:departamento_id(id, nombre, descripcion)
+                lastActivity,
+                departamentos!departamento_id(id, nombre, descripcion)
             `)
             .eq('id', session.user.id)
             .single();
@@ -446,8 +446,8 @@ export const getVisibleUsers = async () => {
                 role, 
                 email,
                 departamento_id,
-                lastactivity,
-                departamento:departamento_id(id, nombre, descripcion)
+                lastActivity,
+                departamentos!departamento_id(id, nombre, descripcion)
             `);
 
         // Aplicar filtros según el rol del usuario
@@ -494,7 +494,7 @@ export const updateLastActivity = async () => {
 
         await supabaseClient
             .from('profiles')
-            .update({ lastactivity: new Date().toISOString() })
+            .update({ lastActivity: new Date().toISOString() })
             .eq('id', session.user.id);
 
     } catch (error) {
@@ -535,8 +535,8 @@ export const getAllUsers = async () => {
                 role, 
                 email,
                 departamento_id,
-                lastactivity,
-                departamento:departamento_id(id, nombre, descripcion)
+                lastActivity,
+                departamentos!departamento_id(id, nombre, descripcion)
             `)
             .order('username');
 

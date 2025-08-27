@@ -316,52 +316,42 @@
             background: #64748b;
         }
 
-        /* Ajustar el espaciado del contenido principal */
-#screen-login, #screen-main {
-    margin-top: 48px; /* 12 * 4 = 48px para compensar la barra de título fija */
+        /* Eliminar espaciado superior */
+#screen-login, #screen-main, #screen-user-management {
+    margin-top: 0;
+    padding-top: 0;
 }
 
 /* Header fijo para la pantalla principal */
 #screen-main header {
     position: fixed;
-    top: 48px; /* Debajo de la barra de título */
+    top: 0;
     left: 0;
     right: 0;
     z-index: 999;
+    margin-top: 0;
 }
 
 /* Ajustar el main para que no se superponga con el header fijo */
 #screen-main main {
-    margin-top: 72px; /* 48px (barra título) + 24px (header) */
+    margin-top: 72px; /* Altura del header */
 }
 
 /* Header fijo para la pantalla de gestión de usuarios */
 #screen-user-management header {
     position: fixed;
-    top: 48px; /* Debajo de la barra de título */
+    top: 0;
     left: 0;
     right: 0;
     z-index: 999;
+    margin-top: 0;
 }
 
 /* Ajustar el main de gestión de usuarios para que no se superponga con el header fijo */
 #screen-user-management main {
-    margin-top: 72px; /* 48px (barra título) + 24px (header) */
+    margin-top: 72px; /* Altura del header */
 }
         
-        /* Header fijo para la pantalla de gestión de usuarios */
-        #screen-user-management header {
-            position: fixed;
-            top: 48px; /* Debajo de la barra de título */
-            left: 0;
-            right: 0;
-            z-index: 999;
-        }
-        
-        /* Ajustar el main de gestión de usuarios para que no se superponga con el header fijo */
-        #screen-user-management main {
-            margin-top: 72px; /* 48px (barra título) + 24px (header) */
-        }
     </style>
 </head>
 <body class="bg-slate-900 text-slate-200 min-h-screen flex flex-col">

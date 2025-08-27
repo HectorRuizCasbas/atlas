@@ -61,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
             createBtn.innerHTML = 'Validando email...';
             createBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
-            // Transformar el nombre de usuario a email y validar existencia
-            const email = await transformUsernameToEmail(username);
+            // Transformar el nombre de usuario a email
+            const email = transformUsernameToEmail(username);
 
             // Actualizar estado de carga
             createBtn.innerHTML = 'Creando usuario...';
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loginBtn.classList.add('opacity-50', 'cursor-not-allowed');
             
             // Convertir username a email si es necesario
-            const email = await transformUsernameToEmail(username);
+            const email = transformUsernameToEmail(username);
             
             // Intentar login
             const result = await loginUser(email, password);

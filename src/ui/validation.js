@@ -113,7 +113,7 @@ export const validateEmailExists = async (email) => {
 /**
  * Transforma un nombre de usuario en un correo electrónico de la empresa.
  */
-export const transformUsernameToEmail = async (username) => {
+export const transformUsernameToEmail = (username) => {
     let email;
     
     if (username.includes('@')) {
@@ -127,11 +127,7 @@ export const transformUsernameToEmail = async (username) => {
         email = `${username}${ZELENZA_DOMAIN}`;
     }
     
-    console.log(`Email generado: ${email}`);
-    
-    // Para creación de usuarios, no validamos existencia previa
-    // El email se validará en el backend al crear el usuario
-    
+    console.log(`Email generado para creación: ${email}`);
     return email;
 };
 

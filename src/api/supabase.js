@@ -524,8 +524,8 @@ export const getAllUsers = async () => {
                 role, 
                 email,
                 departamento_id,
-                created_at,
-                last_activity,
+                lastActivity,
+                supervisedUsers,
                 departamento:departamento_id(id, nombre, descripcion)
             `)
             .order('username');

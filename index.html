@@ -647,8 +647,25 @@
                     <label for="user-management-role-add" class="block text-sm font-medium mb-1">Tipo de Usuario:</label>
                     <select id="user-management-role-add"
                             class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="Usuario">Estándar</option>
+                        <option value="Usuario">Usuario</option>
+                        <option value="Coordinador">Coordinador</option>
+                        <option value="Responsable">Responsable</option>
                         <option value="Administrador">Administrador</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="user-management-full-name-add" class="block text-sm font-medium mb-1">Nombre Completo:</label>
+                    <input type="text" id="user-management-full-name-add" placeholder="Nombre y apellidos"
+                           class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div class="mb-4">
+                    <label for="user-management-department-add" class="block text-sm font-medium mb-1">Departamento:</label>
+                    <select id="user-management-department-add"
+                            class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Sin departamento</option>
+                        <!-- Los departamentos se cargarán dinámicamente -->
                     </select>
                 </div>
 
@@ -670,14 +687,17 @@
                     <select id="filter-user-role"
                             class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         <option value="">Todos los Roles</option>
-                        <option value="Usuario">Estándar</option>
+                        <option value="Usuario">Usuario</option>
+                        <option value="Coordinador">Coordinador</option>
+                        <option value="Responsable">Responsable</option>
                         <option value="Administrador">Administrador</option>
                     </select>
                 </div>
                 <div class="mb-4">
-                    <label for="filter-visible-by" class="block text-sm font-medium mb-1">Visibles para el usuario</label>
-                    <select id="filter-visible-by" class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="">Cualquier usuario</option>
+                    <label for="filter-user-department" class="block text-sm font-medium mb-1">Filtrar por Departamento:</label>
+                    <select id="filter-user-department" class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Todos los Departamentos</option>
+                        <!-- Los departamentos se cargarán dinámicamente -->
                     </select>
                 </div>
                 <button id="btn-clear-user-filters"
@@ -694,8 +714,9 @@
                                          <thead>
                          <tr class="bg-slate-600 text-left text-gray-200">
                              <th class="py-3 px-4 uppercase font-semibold text-sm rounded-tl-lg">Nombre de Usuario</th>
+                             <th class="py-3 px-4 uppercase font-semibold text-sm">Nombre Completo</th>
                              <th class="py-3 px-4 uppercase font-semibold text-sm">Rol</th>
-                             <th class="py-3 px-4 uppercase font-semibold text-sm">Visibilidad</th>
+                             <th class="py-3 px-4 uppercase font-semibold text-sm">Departamento</th>
                              <th class="py-3 px-4 uppercase font-semibold text-sm rounded-tr-lg">Acciones</th>
                          </tr>
                      </thead>
@@ -851,12 +872,29 @@
                     <label for="edit-user-role" class="block text-sm font-medium mb-1">Tipo de Usuario:</label>
                     <select id="edit-user-role"
                             class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="Usuario">Estándar</option>
+                        <option value="Usuario">Usuario</option>
+                        <option value="Coordinador">Coordinador</option>
+                        <option value="Responsable">Responsable</option>
                         <option value="Administrador">Administrador</option>
                     </select>
                     <div id="edit-user-role-help" class="text-xs text-slate-400 mt-1 hidden">
                         <p>⚠️ <strong>Nota:</strong> No se puede cambiar a usuario estándar si es el último administrador del sistema.</p>
                     </div>
+                </div>
+
+                <div>
+                    <label for="edit-user-full-name" class="block text-sm font-medium mb-1">Nombre Completo:</label>
+                    <input type="text" id="edit-user-full-name" placeholder="Nombre y apellidos"
+                           class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <div>
+                    <label for="edit-user-department" class="block text-sm font-medium mb-1">Departamento:</label>
+                    <select id="edit-user-department"
+                            class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Sin departamento</option>
+                        <!-- Los departamentos se cargarán dinámicamente -->
+                    </select>
                 </div>
             </div>
 
@@ -867,38 +905,17 @@
             </div>
 
             <div class="mb-6">
-                <label class="block text-sm font-medium mb-2">Visibilidad de Tareas (Usuarios con Visibilidad):</label>
-                <div class="bg-slate-700 p-3 rounded-lg mb-4">
-                    <p class="text-xs text-slate-300 text-center">
-                        <strong>Instrucciones:</strong> Haz doble clic en un usuario para transferirlo entre las listas. 
-                        Usa los filtros de búsqueda para encontrar usuarios rápidamente.
-                    </p>
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <!-- Columna izquierda: Lista completa de usuarios -->
-                    <div class="bg-slate-700 p-4 rounded-lg">
-                        <h4 class="text-sm font-medium mb-3 text-emerald-300">Usuarios Disponibles</h4>
-                        <div class="mb-3">
-                            <input type="text" id="filter-available-users" placeholder="Buscar usuarios..." 
-                                   class="w-full p-2 rounded-md bg-slate-600 border border-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                <label class="block text-sm font-medium mb-2">Información Adicional:</label>
+                <div class="bg-slate-700 p-4 rounded-lg">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Fecha de Creación:</label>
+                            <p id="edit-user-created-at" class="text-sm text-slate-200">-</p>
                         </div>
-                        <div id="available-users-list" class="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
-                            <!-- Los usuarios disponibles se cargarán aquí -->
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Última Actividad:</label>
+                            <p id="edit-user-last-activity" class="text-sm text-slate-200">-</p>
                         </div>
-                        <p class="text-xs text-slate-400 mt-2 text-center">Doble clic para añadir visibilidad</p>
-                    </div>
-
-                    <!-- Columna derecha: Usuarios con visibilidad -->
-                    <div class="bg-slate-700 p-4 rounded-lg">
-                        <h4 class="text-sm font-medium mb-3 text-emerald-300">Visibles para el usuario</h4>
-                        <div class="mb-3">
-                            <input type="text" id="filter-supervised-users" placeholder="Buscar usuarios..." 
-                                   class="w-full p-2 rounded-md bg-slate-600 border border-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
-                        </div>
-                        <div id="supervised-users-list" class="max-h-60 overflow-y-auto space-y-2 custom-scrollbar">
-                            <!-- Los usuarios con visibilidad se cargarán aquí -->
-                        </div>
-                        <p class="text-xs text-slate-400 mt-2 text-center">Doble clic para quitar visibilidad</p>
                     </div>
                 </div>
             </div>

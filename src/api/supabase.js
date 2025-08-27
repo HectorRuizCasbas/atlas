@@ -492,6 +492,127 @@ export const updateLastActivity = async () => {
 };
 
 /**
+ * Obtiene todos los usuarios (solo para administradores)
+ * @returns {Promise<Array>} - Lista de todos los usuarios
+ */
+export const getAllUsers = async () => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden ver todos los usuarios
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para ver todos los usuarios');
+        }
+
+        const { data: users, error } = await supabaseClient
+            .from('profiles')
+            .select(`
+                id, 
+                username, 
+                full_name, 
+                role, 
+                email,
+                departamento_id,
+                created_at,
+                last_activity,
+                departamento:departamento_id(id, nombre, descripcion)
+            `)
+            .order('username');
+
+        if (error) {
+            throw new Error('Error obteniendo usuarios');
+        }
+
+        return users || [];
+    } catch (error) {
+        console.error('Error obteniendo todos los usuarios:', error);
+        throw error;
+    }
+};
+
+/**
+ * Actualiza un usuario (solo para administradores)
+ * @param {string} userId - ID del usuario a actualizar
+ * @param {object} updateData - Datos a actualizar
+ * @returns {Promise<object>} - Resultado de la actualización
+ */
+export const updateUser = async (userId, updateData) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden actualizar usuarios
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para actualizar usuarios');
+        }
+
+        // Si se incluye contraseña, actualizar en auth
+        if (updateData.password) {
+            const { error: authError } = await supabaseClient.auth.admin.updateUserById(
+                userId,
+                { password: updateData.password }
+            );
+            
+            if (authError) {
+                throw new Error('Error actualizando contraseña: ' + authError.message);
+            }
+            
+            // Remover password de updateData para no enviarlo a profiles
+            delete updateData.password;
+        }
+
+        // Actualizar perfil
+        const { data: updatedUser, error } = await supabaseClient
+            .from('profiles')
+            .update(updateData)
+            .eq('id', userId)
+            .select()
+            .single();
+
+        if (error) {
+            throw new Error('Error actualizando usuario: ' + error.message);
+        }
+
+        return { success: true, user: updatedUser };
+    } catch (error) {
+        console.error('Error actualizando usuario:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
+ * Elimina un usuario (solo para administradores)
+ * @param {string} userId - ID del usuario a eliminar
+ * @returns {Promise<object>} - Resultado de la eliminación
+ */
+export const deleteUser = async (userId) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden eliminar usuarios
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para eliminar usuarios');
+        }
+
+        // No permitir auto-eliminación
+        if (userId === currentProfile.id) {
+            throw new Error('No puedes eliminar tu propia cuenta desde aquí');
+        }
+
+        // Eliminar de auth (esto también eliminará de profiles por CASCADE)
+        const { error: authError } = await supabaseClient.auth.admin.deleteUser(userId);
+        
+        if (authError) {
+            throw new Error('Error eliminando usuario: ' + authError.message);
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error eliminando usuario:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
  * Cierra la sesión del usuario actual
  * @returns {Promise<void>}
  */

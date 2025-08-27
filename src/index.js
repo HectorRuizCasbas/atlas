@@ -5,6 +5,7 @@ import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUs
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
 import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser } from './api/supabase.js';
 import { initializeTaskManagement } from './ui/tasks.js';
+import { initializeUserManagement } from './ui/user-management.js';
 
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
@@ -339,4 +340,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicializar la gestión de tareas
     initializeTaskManagement();
+    
+    // Inicializar la gestión de usuarios
+    initializeUserManagement();
+    
+    // Inicializar menús hamburguesa
+    initializeHamburgerMenus();
 });
+
+// Función para inicializar los menús hamburguesa
+function initializeHamburgerMenus() {
+    // Menú hamburguesa principal
+    const hamburgerButton = document.getElementById('hamburger-button');
+    const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+    
+    // Menú hamburguesa de gestión de usuarios
+    const hamburgerButtonUserManagement = document.getElementById('hamburger-button-user-management');
+    const hamburgerDropdownUserManagement = document.getElementById('hamburger-dropdown-user-management');
+    
+    // Función para cerrar todos los menús
+    function closeAllMenus() {
+        if (hamburgerDropdown) {
+            hamburgerDropdown.classList.remove('show');
+        }
+        if (hamburgerDropdownUserManagement) {
+            hamburgerDropdownUserManagement.classList.remove('show');
+        }
+    }
+    
+    // Event listener para el menú principal
+    if (hamburgerButton && hamburgerDropdown) {
+        hamburgerButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Cerrar otros menús
+            if (hamburgerDropdownUserManagement) {
+                hamburgerDropdownUserManagement.classList.remove('show');
+            }
+            // Toggle del menú actual
+            hamburgerDropdown.classList.toggle('show');
+        });
+    }
+    
+    // Event listener para el menú de gestión de usuarios
+    if (hamburgerButtonUserManagement && hamburgerDropdownUserManagement) {
+        hamburgerButtonUserManagement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Cerrar otros menús
+            if (hamburgerDropdown) {
+                hamburgerDropdown.classList.remove('show');
+            }
+            // Toggle del menú actual
+            hamburgerDropdownUserManagement.classList.toggle('show');
+        });
+    }
+    
+    // Cerrar menús al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.hamburger-menu')) {
+            closeAllMenus();
+        }
+    });
+    
+    // Cerrar menús al presionar Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeAllMenus();
+        }
+    });
+}

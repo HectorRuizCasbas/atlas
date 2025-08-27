@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     // Validaciones básicas
     if (!email || !password || !username || !full_name) {
       return new Response(
-        JSON.stringify({ error: 'Email, password, username y full_name son requeridos' }),
+        JSON.stringify({ error: 'Email, contraseña, usuario y nombre completo son requeridos' }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
@@ -83,17 +83,28 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Crear usuario en auth.users
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true // Auto-confirmar email para usuarios internos
+    // Crear usuario en Supabase Auth
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true
     })
 
     if (authError) {
-      console.error('Error creando usuario en auth:', authError)
+      console.error('Error creando usuario en Auth:', authError)
+      
+      // Traducir errores comunes de Supabase Auth
+      let errorMessage = 'Error al crear usuario';
+      if (authError.message.includes('User already registered')) {
+        errorMessage = 'Este email ya está registrado';
+      } else if (authError.message.includes('email')) {
+        errorMessage = 'Email no válido';
+      } else if (authError.message.includes('password')) {
+        errorMessage = 'Contraseña no válida (mínimo 6 caracteres)';
+      }
+      
       return new Response(
-        JSON.stringify({ error: authError.message }),
+        JSON.stringify({ error: errorMessage }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400 
@@ -120,11 +131,11 @@ Deno.serve(async (req) => {
     if (profileError) {
       console.error('Error creando perfil:', profileError)
       
-      // Si falla la creación del perfil, eliminar el usuario de auth
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
+      // Si falla la creación del perfil, eliminar el usuario de Auth
+      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
       
       return new Response(
-        JSON.stringify({ error: 'Error creando perfil de usuario' }),
+        JSON.stringify({ error: 'Error al crear perfil de usuario' }),
         { 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500 

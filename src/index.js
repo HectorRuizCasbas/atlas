@@ -38,13 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
         const fullName = fullNameInput.value;
-        const role = document.getElementById('new-user-role').value;
         const departmentId = document.getElementById('new-user-department').value;
         
-        console.log('Datos del formulario:', { username, password: '***', confirmPassword: '***', fullName, role, departmentId });
+        console.log('Datos del formulario:', { username, password: '***', confirmPassword: '***', fullName, departmentId });
         
         // Final frontend validation before sending
-        if (password !== confirmPassword || password.length < 6 || username.length === 0 || fullName.trim().length === 0 || role.length === 0) {
+        if (password !== confirmPassword || password.length < 6 || username.length === 0 || fullName.trim().length === 0) {
             console.log('Validación fallida');
             formError.textContent = "Por favor, revisa los campos del formulario.";
             formError.style.display = 'block';
@@ -73,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 password: password,
                 username: username,
                 full_name: fullName.trim(),
-                role: role,
+                role: 'Usuario', // Siempre Usuario por defecto
                 departamento_id: departmentId || null
             });
             
@@ -197,8 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event listeners para validación en tiempo real
     if (passwordInput && confirmPasswordInput && usernameInput && fullNameInput) {
-        const roleInput = document.getElementById('new-user-role');
-        
         passwordInput.addEventListener('input', () => {
             validatePasswordLength();
             validatePasswordMatch();
@@ -210,16 +207,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         usernameInput.addEventListener('input', checkFormValidity);
         fullNameInput.addEventListener('input', checkFormValidity);
-        
-        if (roleInput) {
-            roleInput.addEventListener('change', checkFormValidity);
-        }
     }
     
     // Función para cargar departamentos en el select
     const loadDepartments = async () => {
         try {
+            console.log('Intentando cargar departamentos...');
             const departments = await getDepartments();
+            console.log('Departamentos obtenidos:', departments);
+            
             const departmentSelect = document.getElementById('new-user-department');
             
             if (departmentSelect) {
@@ -227,12 +223,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 departmentSelect.innerHTML = '<option value="">Sin departamento</option>';
                 
                 // Agregar departamentos
-                departments.forEach(dept => {
-                    const option = document.createElement('option');
-                    option.value = dept.id;
-                    option.textContent = dept.nombre;
-                    departmentSelect.appendChild(option);
-                });
+                if (departments && departments.length > 0) {
+                    departments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.id;
+                        option.textContent = dept.nombre;
+                        departmentSelect.appendChild(option);
+                        console.log(`Departamento agregado: ${dept.nombre}`);
+                    });
+                } else {
+                    console.log('No se encontraron departamentos');
+                }
+            } else {
+                console.error('No se encontró el elemento select de departamentos');
             }
         } catch (error) {
             console.error('Error cargando departamentos:', error);

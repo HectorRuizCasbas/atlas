@@ -10,10 +10,9 @@ export const checkFormValidity = () => {
     const confirmPasswordInput = document.getElementById('new-user-confirm-password');
     const usernameInput = document.getElementById('new-user-username');
     const fullNameInput = document.getElementById('new-user-full-name');
-    const roleInput = document.getElementById('new-user-role');
     const saveButton = document.getElementById('btn-save-new-user');
 
-    if (!passwordInput || !confirmPasswordInput || !usernameInput || !fullNameInput || !roleInput || !saveButton) {
+    if (!passwordInput || !confirmPasswordInput || !usernameInput || !fullNameInput || !saveButton) {
         console.warn('Advertencia: No se encontraron todos los elementos del formulario para la validación.');
         return;
     }
@@ -22,14 +21,12 @@ export const checkFormValidity = () => {
     const confirmPassword = confirmPasswordInput.value;
     const username = usernameInput.value;
     const fullName = fullNameInput.value;
-    const role = roleInput.value;
 
     const isPasswordValid = password.length >= 6;
     const isPasswordConfirmed = (password === confirmPassword) && (confirmPassword.length > 0);
     const isUsernameValid = username.length > 0;
     const isFullNameValid = fullName.trim().length > 0;
-    const isRoleValid = role.length > 0;
-    const isFormValid = isPasswordValid && isPasswordConfirmed && isUsernameValid && isFullNameValid && isRoleValid;
+    const isFormValid = isPasswordValid && isPasswordConfirmed && isUsernameValid && isFullNameValid;
 
     if (isFormValid) {
         saveButton.disabled = false;

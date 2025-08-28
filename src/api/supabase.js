@@ -619,6 +619,47 @@ export const updateUser = async (userId, updateData) => {
 };
 
 /**
+ * Actualiza el rol de un usuario específico
+ * @param {string} userId - ID del usuario
+ * @param {string} newRole - Nuevo rol del usuario
+ * @returns {Promise<object>} - Resultado de la actualización
+ */
+export const updateUserRole = async (userId, newRole) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Verificar permisos según el rol actual
+        if (currentProfile.role === 'Administrador') {
+            // Administradores pueden cambiar cualquier rol
+        } else if (currentProfile.role === 'Responsable') {
+            // Responsables solo pueden cambiar Usuario y Coordinador
+            if (newRole !== 'Usuario' && newRole !== 'Coordinador') {
+                throw new Error('No tienes permisos para asignar este rol');
+            }
+        } else {
+            throw new Error('No tienes permisos para actualizar roles');
+        }
+
+        // Actualizar el rol en la tabla profiles
+        const { data: updatedUser, error } = await supabaseClient
+            .from('profiles')
+            .update({ role: newRole })
+            .eq('id', userId)
+            .select()
+            .single();
+
+        if (error) {
+            throw new Error('Error actualizando rol: ' + error.message);
+        }
+
+        return { success: true, user: updatedUser };
+    } catch (error) {
+        console.error('Error actualizando rol:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
  * Elimina un usuario (solo para administradores)
  * @param {string} userId - ID del usuario a eliminar
  * @returns {Promise<object>} - Resultado de la eliminación

@@ -1,6 +1,6 @@
 // src/ui/department-management.js
 
-import { getDepartments, getCurrentUserProfile, getVisibleUsers, createDepartment, updateDepartment, deleteDepartment } from '../api/supabase.js';
+import { getDepartments, createDepartment, updateDepartment, deleteDepartment, getVisibleUsers, getCurrentUserProfile, updateUserRole } from '../api/supabase.js';
 import { showToast } from './tasks.js';
 
 let currentDepartments = [];
@@ -216,11 +216,6 @@ async function loadDepartmentUsers(departmentId) {
                         ${currentProfile.role === 'Administrador' ? `<option value="Responsable" ${user.role === 'Responsable' ? 'selected' : ''}>Responsable</option>` : ''}
                         ${currentProfile.role === 'Administrador' ? `<option value="Administrador" ${user.role === 'Administrador' ? 'selected' : ''}>Administrador</option>` : ''}
                     </select>
-                    ${canEditRole ? `
-                        <span class="text-xs px-2 py-1 rounded-full ${getRoleColorClass(user.role)}">${user.role}</span>
-                    ` : `
-                        <span class="text-xs px-2 py-1 rounded-full bg-gray-600 text-gray-300">Sin permisos</span>
-                    `}
                 </div>
             </div>
         `;
@@ -463,7 +458,11 @@ async function handleEditDepartment(event) {
             showToast('Departamento actualizado exitosamente', 'success');
             
             // Cerrar modal
-            closeEditDepartmentModal();
+            const modal = document.getElementById('edit-department-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.add('hidden');
+            }
             
             // Recargar datos
             await loadDepartmentManagementData();
@@ -509,15 +508,6 @@ export function initializeDepartmentManagement() {
             }
         });
     });
-    
-    // Función específica para cerrar modal de editar departamento
-    window.closeEditDepartmentModal = function() {
-        const modal = document.getElementById('edit-department-modal');
-        if (modal) {
-            modal.style.display = 'none';
-            modal.classList.add('hidden');
-        }
-    };
 
     // Event listeners para formularios
     const newDepartmentForm = document.getElementById('new-department-form');

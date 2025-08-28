@@ -51,3 +51,14 @@ export const hideUserCreatedSuccessModal = () => {
     userCreatedSuccessModal.classList.add('hidden');
     userCreatedSuccessModal.classList.remove('flex');
 };
+
+/**
+ * Oculta el modal de edición de departamento.
+ */
+export const hideEditDepartmentModal = () => {
+    const modal = document.getElementById('edit-department-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+};

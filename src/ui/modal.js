@@ -58,6 +58,8 @@ export const hideUserCreatedSuccessModal = () => {
 export const hideEditDepartmentModal = () => {
     const modal = document.getElementById('edit-department-modal');
     if (modal) {
+        // Solución robusta: establece el estilo en línea para asegurar que se oculte
+        modal.style.display = 'none';
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         console.log('El modal de edición de departamento ha sido ocultado.');

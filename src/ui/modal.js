@@ -58,7 +58,7 @@ export const hideUserCreatedSuccessModal = () => {
 export const hideEditDepartmentModal = () => {
     const modal = document.getElementById('edit-department-modal');
     if (modal) {
-	saveDepartmentChanges();
+	await saveDepartmentChanges();
         // Solución robusta: establece el estilo en línea para asegurar que se oculte
         modal.style.display = 'none';
         modal.classList.add('hidden');

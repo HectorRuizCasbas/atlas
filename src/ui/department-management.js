@@ -489,7 +489,7 @@ export function initializeDepartmentManagement() {
 }
 
 // Función para guardar cambios del departamento
-async function saveDepartmentChanges() {
+export async function saveDepartmentChanges() {
     const id = document.getElementById('edit-department-id').value;
     const name = document.getElementById('edit-department-name').value.trim();
     const description = document.getElementById('edit-department-description').value.trim();

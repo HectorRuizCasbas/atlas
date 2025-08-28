@@ -35,10 +35,9 @@ export function showMainScreen() {
 async function loadDepartmentManagementData() {
     try {
         console.log('Iniciando carga de datos de gestión de departamentos...');
-        await Promise.all([
-            loadDepartments(),
-            loadUsers()
-        ]);
+        // Cargar usuarios primero para poder filtrar departamentos
+        await loadUsers();
+        await loadDepartments();
         console.log('Datos cargados, renderizando tabla...');
         renderDepartmentsTable();
     } catch (error) {
@@ -51,8 +50,22 @@ async function loadDepartmentManagementData() {
 async function loadDepartments() {
     try {
         console.log('Llamando a getDepartments()...');
-        currentDepartments = await getDepartments();
-        console.log('Departamentos cargados:', currentDepartments);
+        const allDepartments = await getDepartments();
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Si es Responsable, solo mostrar departamentos donde es responsable
+        if (currentProfile.role === 'Responsable') {
+            currentDepartments = allDepartments.filter(dept => {
+                // Verificar si el usuario actual es responsable de este departamento
+                const departmentUsers = currentUsers.filter(user => user.departamento_id === dept.id);
+                return departmentUsers.some(user => user.id === currentProfile.id && user.role === 'Responsable');
+            });
+        } else {
+            // Administradores ven todos los departamentos
+            currentDepartments = allDepartments;
+        }
+        
+        console.log('Departamentos filtrados:', currentDepartments);
     } catch (error) {
         console.error('Error cargando departamentos:', error);
         throw error;
@@ -149,21 +162,119 @@ function createDepartmentRow(department) {
     return row;
 }
 
-// Función para editar departamento
-window.editDepartment = function(departmentId) {
+// Función para mostrar el modal de editar departamento
+async function showEditDepartmentModal(departmentId) {
     const department = currentDepartments.find(d => d.id === departmentId);
-    if (!department) {
-        showToast('Departamento no encontrado', 'error');
-        return;
-    }
+    if (!department) return;
 
-    // Llenar el modal de edición
     document.getElementById('edit-department-id').value = department.id;
     document.getElementById('edit-department-name').value = department.nombre;
     document.getElementById('edit-department-description').value = department.descripcion || '';
 
-    // Mostrar modal
-    document.getElementById('edit-department-modal').classList.remove('hidden');
+    // Cargar usuarios del departamento
+    await loadDepartmentUsers(departmentId);
+
+    const modal = document.getElementById('edit-department-modal');
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
+}
+
+// Función para cargar usuarios del departamento en el modal de edición
+async function loadDepartmentUsers(departmentId) {
+    const departmentUsers = currentUsers.filter(user => user.departamento_id === departmentId);
+    const currentProfile = await getCurrentUserProfile();
+    const container = document.getElementById('department-users-list');
+    
+    if (departmentUsers.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-center py-4">No hay usuarios asignados a este departamento</p>';
+        return;
+    }
+
+    container.innerHTML = departmentUsers.map(user => {
+        const canEditRole = canCurrentUserEditRole(currentProfile.role, user.role);
+        
+        return `
+            <div class="flex items-center justify-between p-4 bg-slate-700 rounded-lg">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-emerald-600 rounded-full flex items-center justify-center">
+                        <span class="text-white font-semibold">${user.full_name.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div>
+                        <h5 class="font-medium">${user.full_name}</h5>
+                        <p class="text-sm text-gray-400">${user.email}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <select 
+                        class="bg-slate-600 border border-slate-500 rounded-md px-3 py-1 text-sm ${canEditRole ? '' : 'opacity-50 cursor-not-allowed'}"
+                        data-user-id="${user.id}"
+                        ${canEditRole ? '' : 'disabled'}
+                        onchange="handleRoleChange('${user.id}', this.value)"
+                    >
+                        <option value="Usuario" ${user.role === 'Usuario' ? 'selected' : ''}>Usuario</option>
+                        <option value="Coordinador" ${user.role === 'Coordinador' ? 'selected' : ''}>Coordinador</option>
+                        <option value="Responsable" ${user.role === 'Responsable' ? 'selected' : ''}>Responsable</option>
+                        ${currentProfile.role === 'Administrador' ? `<option value="Administrador" ${user.role === 'Administrador' ? 'selected' : ''}>Administrador</option>` : ''}
+                    </select>
+                    ${canEditRole ? `
+                        <span class="text-xs px-2 py-1 rounded-full ${getRoleColorClass(user.role)}">${user.role}</span>
+                    ` : `
+                        <span class="text-xs px-2 py-1 rounded-full bg-gray-600 text-gray-300">Sin permisos</span>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Función para determinar si el usuario actual puede editar un rol específico
+function canCurrentUserEditRole(currentRole, targetRole) {
+    if (currentRole === 'Administrador') {
+        return true; // Administradores pueden editar cualquier rol
+    }
+    
+    if (currentRole === 'Responsable') {
+        // Responsables pueden editar Usuario y Coordinador, pero no otros Responsables o Administradores
+        return targetRole === 'Usuario' || targetRole === 'Coordinador';
+    }
+    
+    return false; // Otros roles no pueden editar
+}
+
+// Función para obtener la clase de color del rol
+function getRoleColorClass(role) {
+    switch (role) {
+        case 'Administrador': return 'bg-red-600 text-white';
+        case 'Responsable': return 'bg-blue-600 text-white';
+        case 'Coordinador': return 'bg-yellow-600 text-white';
+        case 'Usuario': return 'bg-green-600 text-white';
+        default: return 'bg-gray-600 text-white';
+    }
+}
+
+// Función para manejar cambios de rol (se llamará desde el HTML)
+window.handleRoleChange = async function(userId, newRole) {
+    try {
+        const result = await updateUserRole(userId, newRole);
+        if (result.success) {
+            showToast(`Rol actualizado correctamente`, 'success');
+            // Recargar usuarios para reflejar cambios
+            await loadUsers();
+            // Recargar la lista de usuarios del departamento en el modal
+            const departmentId = document.getElementById('edit-department-id').value;
+            await loadDepartmentUsers(departmentId);
+        } else {
+            showToast(result.error || 'Error actualizando rol', 'error');
+        }
+    } catch (error) {
+        console.error('Error actualizando rol:', error);
+        showToast('Error actualizando rol', 'error');
+    }
+};
+
+// Función para editar departamento
+window.editDepartment = async function(departmentId) {
+    await showEditDepartmentModal(departmentId);
 };
 
 // Función para eliminar departamento
@@ -174,28 +285,115 @@ window.deleteDepartment = async function(departmentId) {
         return;
     }
 
-    // Verificar si tiene usuarios
+    // Verificar si tiene usuarios y mostrar modal personalizado
     const departmentUsers = currentUsers.filter(user => user.departamento_id === departmentId);
-    if (departmentUsers.length > 0) {
-        showToast('No se puede eliminar un departamento que tiene usuarios asignados', 'error');
-        return;
-    }
+    showDeleteDepartmentModal(department, departmentUsers);
+};
 
-    if (!confirm(`¿Estás seguro de que deseas eliminar el departamento "${department.nombre}"?`)) {
-        return;
+// Función para mostrar modal de confirmación de eliminación
+function showDeleteDepartmentModal(department, departmentUsers) {
+    const hasUsers = departmentUsers.length > 0;
+    let modalContent = '';
+    
+    if (hasUsers) {
+        const usersByRole = departmentUsers.reduce((acc, user) => {
+            acc[user.role] = (acc[user.role] || 0) + 1;
+            return acc;
+        }, {});
+        
+        const rolesList = Object.entries(usersByRole)
+            .map(([role, count]) => `${count} ${role}${count > 1 ? 's' : ''}`)
+            .join(', ');
+            
+        modalContent = `
+            <div class="bg-slate-800 p-8 rounded-xl shadow-lg max-w-md w-full">
+                <div class="text-center mb-6">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c.77.833 1.732 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-red-300 mb-2">No se puede eliminar departamento</h3>
+                    <p class="text-sm text-gray-300 mb-4">
+                        El departamento <strong>"${department.nombre}"</strong> tiene <strong>${departmentUsers.length} usuario${departmentUsers.length > 1 ? 's' : ''}</strong> asignado${departmentUsers.length > 1 ? 's' : ''}:
+                    </p>
+                    <div class="bg-slate-700 p-3 rounded-lg mb-4">
+                        <p class="text-sm text-emerald-300">${rolesList}</p>
+                    </div>
+                    <p class="text-xs text-gray-400">
+                        Para eliminar este departamento, primero debe reasignar o eliminar todos los usuarios.
+                    </p>
+                </div>
+                <div class="flex justify-center">
+                    <button onclick="closeDeleteModal()" 
+                            class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-6 rounded-lg transition duration-200">
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        `;
+    } else {
+        modalContent = `
+            <div class="bg-slate-800 p-8 rounded-xl shadow-lg max-w-md w-full">
+                <div class="text-center mb-6">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                        <svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c.77.833 1.732 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-yellow-300 mb-2">Confirmar eliminación</h3>
+                    <p class="text-sm text-gray-300 mb-4">
+                        ¿Estás seguro de que deseas eliminar el departamento <strong>"${department.nombre}"</strong>?
+                    </p>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <div class="flex justify-center gap-4">
+                    <button onclick="closeDeleteModal()" 
+                            class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        Cancelar
+                    </button>
+                    <button onclick="confirmDeleteDepartment('${department.id}')" 
+                            class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        `;
     }
+    
+    // Crear y mostrar modal
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'delete-department-modal';
+    modalOverlay.className = 'fixed inset-0 flex items-center justify-center modal-bg z-[1100]';
+    modalOverlay.innerHTML = modalContent;
+    
+    document.body.appendChild(modalOverlay);
+}
 
+// Función para cerrar modal de eliminación
+window.closeDeleteModal = function() {
+    const modal = document.getElementById('delete-department-modal');
+    if (modal) {
+        modal.remove();
+    }
+};
+
+// Función para confirmar eliminación de departamento
+window.confirmDeleteDepartment = async function(departmentId) {
     try {
         const result = await deleteDepartment(departmentId);
         
         if (result.success) {
             showToast('Departamento eliminado exitosamente', 'success');
-            
+            closeDeleteModal();
             // Recargar datos
             await loadDepartmentManagementData();
         } else {
             showToast(result.error || 'Error eliminando departamento', 'error');
         }
+        
     } catch (error) {
         console.error('Error eliminando departamento:', error);
         showToast('Error eliminando departamento', 'error');
@@ -294,6 +492,7 @@ export function initializeDepartmentManagement() {
     
     if (newDepartmentBtn && newDepartmentModal) {
         newDepartmentBtn.addEventListener('click', () => {
+            newDepartmentModal.style.display = 'flex';
             newDepartmentModal.classList.remove('hidden');
         });
     }
@@ -305,6 +504,7 @@ export function initializeDepartmentManagement() {
             const modalId = e.target.getAttribute('data-modal-close');
             const modal = document.getElementById(modalId);
             if (modal) {
+                modal.style.display = 'none';
                 modal.classList.add('hidden');
             }
         });

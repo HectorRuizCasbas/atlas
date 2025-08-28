@@ -666,6 +666,121 @@ export const hasActiveSession = async () => {
 };
 
 /**
+ * Crea un nuevo departamento (solo para administradores)
+ * @param {object} departmentData - Datos del departamento (nombre, descripcion)
+ * @returns {Promise<object>} - Resultado de la creación
+ */
+export const createDepartment = async (departmentData) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden crear departamentos
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para crear departamentos');
+        }
+
+        const { data: newDepartment, error } = await supabaseClient
+            .from('departamentos')
+            .insert({
+                nombre: departmentData.nombre,
+                descripcion: departmentData.descripcion || null
+            })
+            .select()
+            .single();
+
+        if (error) {
+            throw new Error('Error creando departamento: ' + error.message);
+        }
+
+        return { success: true, department: newDepartment };
+    } catch (error) {
+        console.error('Error creando departamento:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
+ * Actualiza un departamento (solo para administradores)
+ * @param {string} departmentId - ID del departamento a actualizar
+ * @param {object} updateData - Datos a actualizar
+ * @returns {Promise<object>} - Resultado de la actualización
+ */
+export const updateDepartment = async (departmentId, updateData) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden actualizar departamentos
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para actualizar departamentos');
+        }
+
+        const { data: updatedDepartment, error } = await supabaseClient
+            .from('departamentos')
+            .update({
+                nombre: updateData.nombre,
+                descripcion: updateData.descripcion || null
+            })
+            .eq('id', departmentId)
+            .select()
+            .single();
+
+        if (error) {
+            throw new Error('Error actualizando departamento: ' + error.message);
+        }
+
+        return { success: true, department: updatedDepartment };
+    } catch (error) {
+        console.error('Error actualizando departamento:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
+ * Elimina un departamento (solo para administradores)
+ * @param {string} departmentId - ID del departamento a eliminar
+ * @returns {Promise<object>} - Resultado de la eliminación
+ */
+export const deleteDepartment = async (departmentId) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden eliminar departamentos
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para eliminar departamentos');
+        }
+
+        // Verificar si el departamento tiene usuarios asignados
+        const { data: users, error: usersError } = await supabaseClient
+            .from('profiles')
+            .select('id')
+            .eq('departamento_id', departmentId);
+
+        if (usersError) {
+            throw new Error('Error verificando usuarios del departamento');
+        }
+
+        if (users && users.length > 0) {
+            throw new Error('No se puede eliminar un departamento que tiene usuarios asignados');
+        }
+
+        // Eliminar departamento
+        const { error } = await supabaseClient
+            .from('departamentos')
+            .delete()
+            .eq('id', departmentId);
+
+        if (error) {
+            throw new Error('Error eliminando departamento: ' + error.message);
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error eliminando departamento:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
  * Cierra la sesión del usuario actual
  * @returns {Promise<void>}
  */

@@ -79,15 +79,13 @@ Deno.serve(async (req)=>{
         });
       }
     }
-    
     // Verificar si el usuario ya existe
     console.log('Verificando si el usuario ya existe:', email);
     const { data: existingUser, error: checkError } = await supabaseAdmin.auth.admin.listUsers();
-    
     if (checkError) {
       console.error('Error verificando usuarios existentes:', checkError);
     } else {
-      const userExists = existingUser.users.find(user => user.email === email);
+      const userExists = existingUser.users.find((user)=>user.email === email);
       if (userExists) {
         console.log('Usuario ya existe:', email);
         return new Response(JSON.stringify({
@@ -101,7 +99,6 @@ Deno.serve(async (req)=>{
         });
       }
     }
-    
     // Crear usuario en Supabase Auth
     console.log('Creando usuario en auth:', email);
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -140,7 +137,6 @@ Deno.serve(async (req)=>{
       departamento_id: departamento_id || null,
       lastActivity: new Date().toISOString()
     });
-    
     const { data: profileData, error: profileError } = await supabaseAdmin.from('profiles').insert({
       id: authUser.user.id,
       username: username,

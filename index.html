@@ -415,6 +415,9 @@
                         <button id="btn-user-management" class="hamburger-item hidden">
                             Configurar Usuarios
                         </button>
+                        <button id="btn-department-management" class="hamburger-item hidden">
+                            Gestión de Departamentos
+                        </button>
                         <button id="btn-change-password" class="hamburger-item">
                             Cambiar Contraseña
                         </button>
@@ -1168,6 +1171,149 @@
             </div>
         </div>
     </div>
+
+    <!-- Pantalla de Gestión de Departamentos -->
+    <div id="screen-department-management" class="hidden min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+        <!-- Header -->
+        <div class="bg-slate-800 shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-6">
+                    <div class="flex items-center space-x-4">
+                        <button id="btn-back-department-management" class="text-slate-400 hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m12 19-7-7 7-7"></path>
+                                <path d="M19 12H5"></path>
+                            </svg>
+                        </button>
+                        <h1 class="text-3xl font-bold text-emerald-300">Gestión de Departamentos</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span id="current-user-department-management" class="text-slate-300"></span>
+                        <div class="hamburger-menu relative">
+                            <button id="hamburger-button-department-management" class="text-slate-300 hover:text-white focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                                </svg>
+                            </button>
+                            <div id="hamburger-dropdown-department-management" class="hamburger-dropdown">
+                                <button id="btn-logout-department-management" class="hamburger-item">Cerrar Sesión</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Botón Nuevo Departamento -->
+            <div class="mb-6">
+                <button id="btn-new-department" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition duration-200 flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Nuevo Departamento</span>
+                </button>
+            </div>
+
+            <!-- Tabla de Departamentos -->
+            <div class="bg-slate-800 rounded-lg shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-slate-700">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                    Nombre
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                    Descripción
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                    Usuarios
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                                    Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="departments-table-body" class="bg-slate-800 divide-y divide-gray-700">
+                            <!-- Las filas se generarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Departamento -->
+    <div id="new-department-modal" class="fixed inset-0 hidden items-center justify-center modal-bg z-[1100]">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-lg max-w-md w-full">
+            <h3 class="text-2xl font-semibold mb-6 text-emerald-300 text-center">Nuevo Departamento</h3>
+            
+            <form id="new-department-form">
+                <div class="mb-4">
+                    <label for="new-department-name" class="block text-sm font-medium mb-2">Nombre del Departamento:</label>
+                    <input type="text" id="new-department-name" required
+                           class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                
+                <div class="mb-6">
+                    <label for="new-department-description" class="block text-sm font-medium mb-2">Descripción:</label>
+                    <textarea id="new-department-description" rows="3"
+                              class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end gap-4">
+                    <button type="button" data-modal-close="new-department-modal"
+                            class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        Crear Departamento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Editar Departamento -->
+    <div id="edit-department-modal" class="fixed inset-0 hidden items-center justify-center modal-bg z-[1100]">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-lg max-w-md w-full">
+            <h3 class="text-2xl font-semibold mb-6 text-blue-300 text-center">Editar Departamento</h3>
+            
+            <form id="edit-department-form">
+                <input type="hidden" id="edit-department-id">
+                
+                <div class="mb-4">
+                    <label for="edit-department-name" class="block text-sm font-medium mb-2">Nombre del Departamento:</label>
+                    <input type="text" id="edit-department-name" required
+                           class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="mb-6">
+                    <label for="edit-department-description" class="block text-sm font-medium mb-2">Descripción:</label>
+                    <textarea id="edit-department-description" rows="3"
+                              class="w-full p-3 rounded-md bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end gap-4">
+                    <button type="button" data-modal-close="edit-department-modal"
+                            class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-200">
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 <script type="module" src="src/index.js"></script>
 </body>
 </html>

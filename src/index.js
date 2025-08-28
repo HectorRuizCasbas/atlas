@@ -5,7 +5,8 @@ import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUs
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
 import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser, hasActiveSession } from './api/supabase.js';
 import { initializeTaskManagement } from './ui/tasks.js';
-import { initializeUserManagement } from './ui/user-management.js';
+import { initializeUserManagement, showUserManagementScreen } from './ui/user-management.js';
+import { initializeDepartmentManagement, showDepartmentManagementScreen } from './ui/department-management.js';
 
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
@@ -117,11 +118,21 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Mostrar/ocultar opciones según el rol
             const userManagementBtn = document.getElementById('btn-user-management');
+            const departmentManagementBtn = document.getElementById('btn-department-management');
+            
             if (userManagementBtn) {
                 if (profile.role === 'Administrador') {
                     userManagementBtn.classList.remove('hidden');
                 } else {
                     userManagementBtn.classList.add('hidden');
+                }
+            }
+            
+            if (departmentManagementBtn) {
+                if (profile.role === 'Administrador' || profile.role === 'Responsable') {
+                    departmentManagementBtn.classList.remove('hidden');
+                } else {
+                    departmentManagementBtn.classList.add('hidden');
                 }
             }
             
@@ -335,12 +346,28 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Event listeners para botones de logout
-    const logoutButtons = document.querySelectorAll('#btn-logout, #btn-logout-user-management');
+    const logoutButtons = document.querySelectorAll('#btn-logout, #btn-logout-user-management, #btn-logout-department-management');
     logoutButtons.forEach(button => {
         if (button) {
             button.addEventListener('click', handleLogout);
         }
     });
+
+    // Event listener para gestión de usuarios
+    const userManagementBtn = document.getElementById('btn-user-management');
+    if (userManagementBtn) {
+        userManagementBtn.addEventListener('click', () => {
+            showUserManagementScreen();
+        });
+    }
+
+    // Event listener para gestión de departamentos
+    const departmentManagementBtn = document.getElementById('btn-department-management');
+    if (departmentManagementBtn) {
+        departmentManagementBtn.addEventListener('click', () => {
+            showDepartmentManagementScreen();
+        });
+    }
 
     // Inicializar la aplicación
     initializeApp();
@@ -369,6 +396,7 @@ async function initializeApp() {
             // Inicializar módulos que requieren sesión
             initializeTaskManagement();
             initializeUserManagement();
+            initializeDepartmentManagement();
         } else {
             console.log('No hay sesión activa, mostrando pantalla de login');
             

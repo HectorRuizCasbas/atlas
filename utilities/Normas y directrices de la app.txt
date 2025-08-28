@@ -64,6 +64,7 @@ NORMAS Y DIRECTRICES DE LA APP DE GESTIÓN DE TAREAS
   - Acceso a todas las pantallas y configuraciones.
   - Visualización de todas las tareas (excepto privadas).
   - Puede borrar tareas de cualquier usuario.
+  - Siempre debe haber un administrador en toda la app, no se puede cambiar el rol de administrador si éste es el último de la app.
 
 - Responsable
   - Configurable por un administrador.
@@ -84,7 +85,7 @@ NORMAS Y DIRECTRICES DE LA APP DE GESTIÓN DE TAREAS
 6) DEPARTAMENTOS
 ----------------
 - La creación de departamentos la realizan únicamente administradores.
-- Debe existir al menos un responsable (pueden existir varios).
+- Debe existir al menos un responsable (pueden existir varios). Por lo que existe la restricción de que un usuario no se puede quitar de administrador o resposanble si peretnece a un departamento y en este no hay mas administradores o responsables.
 - Puede tener cero o más coordinadores.
 - Puede tener cero o más usuarios estándar.
 

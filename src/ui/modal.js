@@ -60,5 +60,8 @@ export const hideEditDepartmentModal = () => {
     if (modal) {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        console.log('El modal de edición de departamento ha sido ocultado.');
+    } else {
+        console.error('Elemento del modal de edición de departamento no encontrado.');
     }
 };

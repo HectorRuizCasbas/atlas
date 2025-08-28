@@ -103,7 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
    // Conectar el botón 'X' del modal de edición de departamento con la función
     const closeEditDepartmentModalBtn = document.querySelector('[data-modal-close="edit-department-modal"]');
     if (closeEditDepartmentModalBtn) {
-        closeEditDepartmentModalBtn.addEventListener('click', hideEditDepartmentModal);
+        console.log('Event listener para cerrar el modal de edición de departamento agregado.');
+        closeEditDepartmentModalBtn.addEventListener('click', () => {
+            console.log('Botón de cierre del modal de edición de departamento clickeado.');
+            hideEditDepartmentModal();
+        });
     }
 
     // Función para inicializar la sesión del usuario

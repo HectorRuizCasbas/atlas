@@ -3,7 +3,7 @@
 // Importar todas las funciones de los módulos.
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
-import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser } from './api/supabase.js';
+import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser, hasActiveSession } from './api/supabase.js';
 import { initializeTaskManagement } from './ui/tasks.js';
 import { initializeUserManagement } from './ui/user-management.js';
 
@@ -173,6 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 loginScreen.classList.add('hidden');
                 mainScreen.classList.remove('hidden');
                 
+                // Inicializar módulos que requieren sesión
+                initializeTaskManagement();
+                initializeUserManagement();
+                
                 // Limpiar formulario
                 loginUsernameInput.value = '';
                 loginPasswordInput.value = '';
@@ -338,15 +342,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Inicializar la gestión de tareas
-    initializeTaskManagement();
-    
-    // Inicializar la gestión de usuarios
-    initializeUserManagement();
-    
-    // Inicializar menús hamburguesa
-    initializeHamburgerMenus();
+    // Inicializar la aplicación
+    initializeApp();
 });
+
+// Función para inicializar la aplicación
+async function initializeApp() {
+    try {
+        // Verificar si hay una sesión activa
+        const sessionActive = await hasActiveSession();
+        
+        if (sessionActive) {
+            console.log('Sesión activa detectada, inicializando módulos...');
+            
+            // Inicializar sesión del usuario
+            await initializeUserSession();
+            
+            // Mostrar pantalla principal
+            const loginScreen = document.getElementById('screen-login');
+            const mainScreen = document.getElementById('screen-main');
+            if (loginScreen && mainScreen) {
+                loginScreen.classList.add('hidden');
+                mainScreen.classList.remove('hidden');
+            }
+            
+            // Inicializar módulos que requieren sesión
+            initializeTaskManagement();
+            initializeUserManagement();
+        } else {
+            console.log('No hay sesión activa, mostrando pantalla de login');
+            
+            // Asegurar que se muestre la pantalla de login
+            const loginScreen = document.getElementById('screen-login');
+            const mainScreen = document.getElementById('screen-main');
+            if (loginScreen && mainScreen) {
+                mainScreen.classList.add('hidden');
+                loginScreen.classList.remove('hidden');
+            }
+        }
+        
+        // Inicializar menús hamburguesa (no requieren sesión)
+        initializeHamburgerMenus();
+        
+    } catch (error) {
+        console.error('Error inicializando aplicación:', error);
+        
+        // En caso de error, mostrar pantalla de login
+        const loginScreen = document.getElementById('screen-login');
+        const mainScreen = document.getElementById('screen-main');
+        if (loginScreen && mainScreen) {
+            mainScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
+        }
+        
+        // Inicializar menús hamburguesa de todas formas
+        initializeHamburgerMenus();
+    }
+}
 
 // Función para inicializar los menús hamburguesa
 function initializeHamburgerMenus() {

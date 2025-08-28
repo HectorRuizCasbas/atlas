@@ -638,6 +638,20 @@ export const deleteUser = async (userId) => {
 };
 
 /**
+ * Verifica si hay una sesión activa
+ * @returns {Promise<boolean>} - true si hay sesión activa, false si no
+ */
+export const hasActiveSession = async () => {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        return session !== null;
+    } catch (error) {
+        console.error('Error verificando sesión:', error);
+        return false;
+    }
+};
+
+/**
  * Cierra la sesión del usuario actual
  * @returns {Promise<void>}
  */

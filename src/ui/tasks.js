@@ -1,7 +1,7 @@
 // src/ui/tasks.js
 // Funciones para la gestión de tareas
 
-import { createTask, getCurrentUserProfile, getSupervisedUsers, getUserTasks, getTaskWithHistory, sendChatMessage, subscribeToTaskHistory } from '../api/supabase.js';
+import { createTask, getCurrentUserProfile, getSupervisedUsers, getUserTasks, getTaskWithHistory, sendChatMessage, subscribeToTaskHistory, hasActiveSession } from '../api/supabase.js';
 
 /**
  * Muestra un mensaje toast al usuario
@@ -155,6 +155,13 @@ export const loadAssignedUsersDropdown = async () => {
     try {
         const assignedSelect = document.getElementById('new-assigned-to');
         if (!assignedSelect) return;
+
+        // Verificar si hay sesión activa antes de continuar
+        const sessionActive = await hasActiveSession();
+        if (!sessionActive) {
+            console.log('No hay sesión activa, omitiendo carga de usuarios');
+            return;
+        }
 
         // Obtener usuarios supervisados
         const users = await getSupervisedUsers();
@@ -385,6 +392,13 @@ export const openTaskDetail = (taskId) => {
  */
 export const loadTasks = async () => {
     try {
+        // Verificar si hay sesión activa antes de continuar
+        const sessionActive = await hasActiveSession();
+        if (!sessionActive) {
+            console.log('No hay sesión activa, omitiendo carga de tareas');
+            return;
+        }
+
         // Obtener filtros actuales
         const filterStatus = document.getElementById('filter-state')?.value || 'OPEN_TASKS';
         const filters = {
@@ -410,6 +424,13 @@ export const loadTasks = async () => {
  */
 export const preloadFilters = async () => {
     try {
+        // Verificar si hay sesión activa antes de continuar
+        const sessionActive = await hasActiveSession();
+        if (!sessionActive) {
+            console.log('No hay sesión activa, omitiendo precarga de filtros');
+            return;
+        }
+
         // Cargar usuarios supervisados en el filtro de asignación
         const users = await getSupervisedUsers();
         const currentProfile = await getCurrentUserProfile();

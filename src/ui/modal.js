@@ -55,10 +55,20 @@ export const hideUserCreatedSuccessModal = () => {
 /**
  * Oculta el modal de edición de departamento.
  */
-export const hideEditDepartmentModal = () => {
+export const hideEditDepartmentModal = async () => {
+    console.log('hideEditDepartmentModal llamada');
     const modal = document.getElementById('edit-department-modal');
     if (modal) {
-	await saveDepartmentChanges();
+        console.log('Modal encontrado, guardando cambios...');
+        try {
+            // Importar dinámicamente la función para evitar dependencias circulares
+            const { saveDepartmentChanges } = await import('./department-management.js');
+            await saveDepartmentChanges();
+            console.log('Cambios guardados exitosamente');
+        } catch (error) {
+            console.error('Error guardando cambios:', error);
+        }
+        
         // Solución robusta: establece el estilo en línea para asegurar que se oculte
         modal.style.display = 'none';
         modal.classList.add('hidden');

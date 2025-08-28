@@ -456,25 +456,6 @@ export function initializeDepartmentManagement() {
         });
     }
 
-    // Event listeners para cerrar modales
-    const closeButtons = document.querySelectorAll('[data-modal-close]');
-    closeButtons.forEach(button => {
-        button.addEventListener('click', async (e) => {
-            // Usa e.currentTarget en lugar de e.target
-            const modalId = e.currentTarget.getAttribute('data-modal-close'); 
-            const modal = document.getElementById(modalId);
-            
-            // Si es el modal de editar departamento, guardar cambios antes de cerrar
-            if (modalId === 'edit-department-modal') {
-                await saveDepartmentChanges();
-            }
-            
-            if (modal) {
-                modal.style.display = 'none';
-                modal.classList.add('hidden');
-            }
-        });
-    });
 
     // Event listeners para formularios
     const newDepartmentForm = document.getElementById('new-department-form');

@@ -709,9 +709,24 @@ export const updateDepartment = async (departmentId, updateData) => {
     try {
         const currentProfile = await getCurrentUserProfile();
         
-        // Solo administradores pueden actualizar departamentos
-        if (currentProfile.role !== 'Administrador') {
+        // Administradores pueden actualizar cualquier departamento
+        // Responsables solo pueden actualizar departamentos donde son responsables
+        if (currentProfile.role !== 'Administrador' && currentProfile.role !== 'Responsable') {
             throw new Error('No tienes permisos para actualizar departamentos');
+        }
+        
+        // Si es Responsable, verificar que sea responsable de este departamento
+        if (currentProfile.role === 'Responsable') {
+            const { data: departmentUsers, error: usersError } = await supabaseClient
+                .from('profiles')
+                .select('id, role')
+                .eq('departamento_id', departmentId)
+                .eq('id', currentProfile.id)
+                .eq('role', 'Responsable');
+                
+            if (usersError || !departmentUsers || departmentUsers.length === 0) {
+                throw new Error('No tienes permisos para actualizar este departamento');
+            }
         }
 
         const { data: updatedDepartment, error } = await supabaseClient

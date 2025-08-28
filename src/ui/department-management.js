@@ -213,7 +213,7 @@ async function loadDepartmentUsers(departmentId) {
                     >
                         <option value="Usuario" ${user.role === 'Usuario' ? 'selected' : ''}>Usuario</option>
                         <option value="Coordinador" ${user.role === 'Coordinador' ? 'selected' : ''}>Coordinador</option>
-                        <option value="Responsable" ${user.role === 'Responsable' ? 'selected' : ''}>Responsable</option>
+                        ${currentProfile.role === 'Administrador' ? `<option value="Responsable" ${user.role === 'Responsable' ? 'selected' : ''}>Responsable</option>` : ''}
                         ${currentProfile.role === 'Administrador' ? `<option value="Administrador" ${user.role === 'Administrador' ? 'selected' : ''}>Administrador</option>` : ''}
                     </select>
                     ${canEditRole ? `
@@ -463,7 +463,7 @@ async function handleEditDepartment(event) {
             showToast('Departamento actualizado exitosamente', 'success');
             
             // Cerrar modal
-            document.getElementById('edit-department-modal').classList.add('hidden');
+            closeEditDepartmentModal();
             
             // Recargar datos
             await loadDepartmentManagementData();
@@ -509,6 +509,15 @@ export function initializeDepartmentManagement() {
             }
         });
     });
+    
+    // Función específica para cerrar modal de editar departamento
+    window.closeEditDepartmentModal = function() {
+        const modal = document.getElementById('edit-department-modal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+    };
 
     // Event listeners para formularios
     const newDepartmentForm = document.getElementById('new-department-form');

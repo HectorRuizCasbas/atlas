@@ -213,7 +213,7 @@ async function loadDepartmentUsers(departmentId) {
                     >
                         <option value="Usuario" ${user.role === 'Usuario' ? 'selected' : ''}>Usuario</option>
                         <option value="Coordinador" ${user.role === 'Coordinador' ? 'selected' : ''}>Coordinador</option>
-                        ${currentProfile.role === 'Administrador' ? `<option value="Responsable" ${user.role === 'Responsable' ? 'selected' : ''}>Responsable</option>` : ''}
+                        <option value="Responsable" ${user.role === 'Responsable' ? 'selected' : ''} ${currentProfile.role !== 'Administrador' && user.role === 'Responsable' ? 'disabled' : ''}>Responsable</option>
                         ${currentProfile.role === 'Administrador' ? `<option value="Administrador" ${user.role === 'Administrador' ? 'selected' : ''}>Administrador</option>` : ''}
                     </select>
                 </div>
@@ -435,46 +435,6 @@ async function handleCreateDepartment(event) {
     }
 }
 
-// Función para manejar la edición de departamento
-async function handleEditDepartment(event) {
-    event.preventDefault();
-    
-    const id = document.getElementById('edit-department-id').value;
-    const name = document.getElementById('edit-department-name').value.trim();
-    const description = document.getElementById('edit-department-description').value.trim();
-    
-    if (!name) {
-        showToast('El nombre del departamento es obligatorio', 'error');
-        return;
-    }
-    
-    try {
-        const result = await updateDepartment(id, {
-            nombre: name,
-            descripcion: description
-        });
-        
-        if (result.success) {
-            showToast('Departamento actualizado exitosamente', 'success');
-            
-            // Cerrar modal
-            const modal = document.getElementById('edit-department-modal');
-            if (modal) {
-                modal.style.display = 'none';
-                modal.classList.add('hidden');
-            }
-            
-            // Recargar datos
-            await loadDepartmentManagementData();
-        } else {
-            showToast(result.error || 'Error actualizando departamento', 'error');
-        }
-        
-    } catch (error) {
-        console.error('Error actualizando departamento:', error);
-        showToast('Error actualizando departamento', 'error');
-    }
-}
 
 // Función para inicializar la gestión de departamentos
 export function initializeDepartmentManagement() {
@@ -499,9 +459,15 @@ export function initializeDepartmentManagement() {
     // Event listeners para cerrar modales
     const closeButtons = document.querySelectorAll('[data-modal-close]');
     closeButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
+        button.addEventListener('click', async (e) => {
             const modalId = e.target.getAttribute('data-modal-close');
             const modal = document.getElementById(modalId);
+            
+            // Si es el modal de editar departamento, guardar cambios antes de cerrar
+            if (modalId === 'edit-department-modal') {
+                await saveDepartmentChanges();
+            }
+            
             if (modal) {
                 modal.style.display = 'none';
                 modal.classList.add('hidden');
@@ -517,9 +483,37 @@ export function initializeDepartmentManagement() {
         newDepartmentForm.addEventListener('submit', handleCreateDepartment);
     }
     
-    if (editDepartmentForm) {
-        editDepartmentForm.addEventListener('submit', handleEditDepartment);
-    }
 
     console.log('Gestión de departamentos inicializada');
+}
+
+// Función para guardar cambios del departamento
+async function saveDepartmentChanges() {
+    const id = document.getElementById('edit-department-id').value;
+    const name = document.getElementById('edit-department-name').value.trim();
+    const description = document.getElementById('edit-department-description').value.trim();
+    
+    if (!name) {
+        showToast('El nombre del departamento es obligatorio', 'error');
+        return;
+    }
+    
+    try {
+        const result = await updateDepartment(id, {
+            nombre: name,
+            descripcion: description
+        });
+        
+        if (result.success) {
+            showToast('Departamento actualizado exitosamente', 'success');
+            // Recargar datos
+            await loadDepartmentManagementData();
+        } else {
+            showToast(result.error || 'Error actualizando departamento', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error actualizando departamento:', error);
+        showToast('Error actualizando departamento', 'error');
+    }
 }

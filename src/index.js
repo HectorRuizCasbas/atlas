@@ -363,43 +363,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Event listeners para botones de logout
-    const logoutButtons = document.querySelectorAll('#btn-logout, #btn-logout-user-management, #btn-logout-department-management');
-    logoutButtons.forEach(button => {
-        if (button) {
-            button.addEventListener('click', handleLogout);
-        }
-    });
+    // Event listener para botón de logout unificado
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
 
-    // Event listeners para navegación universal - Tareas
-    const mainTasksButtons = document.querySelectorAll('#btn-main-tasks, #btn-main-tasks-from-users, #btn-main-tasks-from-departments');
-    mainTasksButtons.forEach(button => {
-        if (button) {
-            button.addEventListener('click', () => {
-                showMainScreen();
-            });
-        }
-    });
+    // Event listeners para navegación unificada
+    const navigateTasksBtn = document.getElementById('btn-navigate-tasks');
+    if (navigateTasksBtn) {
+        navigateTasksBtn.addEventListener('click', () => {
+            navigateToScreen('tasks');
+        });
+    }
 
-    // Event listeners para navegación universal - Usuarios
-    const userManagementButtons = document.querySelectorAll('#btn-user-management, #btn-user-management-from-departments');
-    userManagementButtons.forEach(button => {
-        if (button) {
-            button.addEventListener('click', () => {
-                showUserManagementScreen();
-            });
-        }
-    });
+    const navigateDepartmentsBtn = document.getElementById('btn-navigate-departments');
+    if (navigateDepartmentsBtn) {
+        navigateDepartmentsBtn.addEventListener('click', () => {
+            navigateToScreen('departments');
+        });
+    }
 
-    // Event listeners para navegación universal - Departamentos
-    const departmentManagementButtons = document.querySelectorAll('#btn-department-management, #btn-department-management-from-users');
-    departmentManagementButtons.forEach(button => {
-        if (button) {
-            button.addEventListener('click', () => {
-                showDepartmentManagementScreen();
-            });
-        }
-    });
+    const navigateUsersBtn = document.getElementById('btn-navigate-users');
+    if (navigateUsersBtn) {
+        navigateUsersBtn.addEventListener('click', () => {
+            navigateToScreen('users');
+        });
+    }
 
     // Inicializar la aplicación
     initializeApp();
@@ -455,100 +445,125 @@ async function initializeApp() {
             loginScreen.classList.remove('hidden');
         }
         
-        // Inicializar menús hamburguesa de todas formas
+        // Inicializar menú hamburguesa unificado
         await initializeHamburgerMenus();
+        
+        // Establecer pantalla inicial
+        currentScreen = 'tasks';
+        updateHamburgerMenu();
     }
 }
 
-// Función para inicializar los menús hamburguesa
-async function initializeHamburgerMenus() {
-    // Menú hamburguesa principal
-    const hamburgerButton = document.getElementById('hamburger-button');
-    const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+// Variable global para rastrear la pantalla actual
+let currentScreen = 'tasks';
+
+// Función para navegar entre pantallas
+function navigateToScreen(screenName) {
+    // Ocultar todas las pantallas
+    const screens = {
+        'tasks': document.getElementById('screen-main'),
+        'users': document.getElementById('screen-user-management'),
+        'departments': document.getElementById('screen-department-management')
+    };
     
-    // Menú hamburguesa de gestión de usuarios
-    const hamburgerButtonUserManagement = document.getElementById('hamburger-button-user-management');
-    const hamburgerDropdownUserManagement = document.getElementById('hamburger-dropdown-user-management');
-    
-    // Menú hamburguesa de gestión de departamentos
-    const hamburgerButtonDepartmentManagement = document.getElementById('hamburger-button-department-management');
-    const hamburgerDropdownDepartmentManagement = document.getElementById('hamburger-dropdown-department-management');
-    
-    // Función para cerrar todos los menús
-    function closeAllMenus() {
-        if (hamburgerDropdown) {
-            hamburgerDropdown.classList.remove('show');
+    // Ocultar todas las pantallas
+    Object.values(screens).forEach(screen => {
+        if (screen) {
+            screen.classList.add('hidden');
         }
-        if (hamburgerDropdownUserManagement) {
-            hamburgerDropdownUserManagement.classList.remove('show');
-        }
-        if (hamburgerDropdownDepartmentManagement) {
-            hamburgerDropdownDepartmentManagement.classList.remove('show');
+    });
+    
+    // Mostrar la pantalla seleccionada
+    const targetScreen = screens[screenName];
+    if (targetScreen) {
+        targetScreen.classList.remove('hidden');
+        currentScreen = screenName;
+        
+        // Actualizar el menú hamburguesa
+        updateHamburgerMenu();
+        
+        // Cargar datos según la pantalla
+        if (screenName === 'users') {
+            showUserManagementScreen();
+        } else if (screenName === 'departments') {
+            showDepartmentManagementScreen();
+        } else if (screenName === 'tasks') {
+            showMainScreen();
         }
     }
+    
+    // Cerrar el menú hamburguesa
+    const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+    if (hamburgerDropdown) {
+        hamburgerDropdown.classList.remove('show');
+    }
+}
+
+// Función para actualizar el menú hamburguesa según la pantalla actual
+function updateHamburgerMenu() {
+    const tasksBtn = document.getElementById('btn-navigate-tasks');
+    const departmentsBtn = document.getElementById('btn-navigate-departments');
+    const usersBtn = document.getElementById('btn-navigate-users');
+    
+    // Resetear estilos
+    [tasksBtn, departmentsBtn, usersBtn].forEach(btn => {
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
+    
+    // Sombrear la pantalla actual
+    if (currentScreen === 'tasks' && tasksBtn) {
+        tasksBtn.disabled = true;
+        tasksBtn.style.opacity = '0.5';
+        tasksBtn.style.cursor = 'not-allowed';
+    } else if (currentScreen === 'departments' && departmentsBtn) {
+        departmentsBtn.disabled = true;
+        departmentsBtn.style.opacity = '0.5';
+        departmentsBtn.style.cursor = 'not-allowed';
+    } else if (currentScreen === 'users' && usersBtn) {
+        usersBtn.disabled = true;
+        usersBtn.style.opacity = '0.5';
+        usersBtn.style.cursor = 'not-allowed';
+    }
+}
+
+// Función para inicializar el menú hamburguesa unificado
+async function initializeHamburgerMenus() {
+    const hamburgerButton = document.getElementById('hamburger-button');
+    const hamburgerDropdown = document.getElementById('hamburger-dropdown');
     
     // Configurar permisos de menús según el rol del usuario
     await setupMenuPermissions();
     
-    // Event listener para el menú principal
+    // Actualizar menú inicial
+    updateHamburgerMenu();
+    
+    // Event listener para el botón hamburguesa
     if (hamburgerButton && hamburgerDropdown) {
         hamburgerButton.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Cerrar otros menús
-            if (hamburgerDropdownUserManagement) {
-                hamburgerDropdownUserManagement.classList.remove('show');
-            }
-            if (hamburgerDropdownDepartmentManagement) {
-                hamburgerDropdownDepartmentManagement.classList.remove('show');
-            }
-            // Toggle del menú actual
             hamburgerDropdown.classList.toggle('show');
         });
     }
     
-    // Event listener para el menú de gestión de usuarios
-    if (hamburgerButtonUserManagement && hamburgerDropdownUserManagement) {
-        hamburgerButtonUserManagement.addEventListener('click', (e) => {
-            e.stopPropagation();
-            // Cerrar otros menús
-            if (hamburgerDropdown) {
-                hamburgerDropdown.classList.remove('show');
-            }
-            if (hamburgerDropdownDepartmentManagement) {
-                hamburgerDropdownDepartmentManagement.classList.remove('show');
-            }
-            // Toggle del menú actual
-            hamburgerDropdownUserManagement.classList.toggle('show');
-        });
-    }
-    
-    // Event listener para el menú de gestión de departamentos
-    if (hamburgerButtonDepartmentManagement && hamburgerDropdownDepartmentManagement) {
-        hamburgerButtonDepartmentManagement.addEventListener('click', (e) => {
-            e.stopPropagation();
-            // Cerrar otros menús
-            if (hamburgerDropdown) {
-                hamburgerDropdown.classList.remove('show');
-            }
-            if (hamburgerDropdownUserManagement) {
-                hamburgerDropdownUserManagement.classList.remove('show');
-            }
-            // Toggle del menú actual
-            hamburgerDropdownDepartmentManagement.classList.toggle('show');
-        });
-    }
-    
-    // Cerrar menús al hacer clic fuera
+    // Cerrar menú al hacer clic fuera
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.hamburger-menu')) {
-            closeAllMenus();
+            if (hamburgerDropdown) {
+                hamburgerDropdown.classList.remove('show');
+            }
         }
     });
     
-    // Cerrar menús al presionar Escape
+    // Cerrar menú al presionar Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            closeAllMenus();
+            if (hamburgerDropdown) {
+                hamburgerDropdown.classList.remove('show');
+            }
         }
     });
 }
@@ -561,37 +576,22 @@ async function setupMenuPermissions() {
         
         const userRole = currentProfile.role;
         
-        // Elementos de menú para departamentos
-        const departmentMenuItems = document.querySelectorAll('#btn-department-management, #btn-department-management-from-users');
-        
-        // Elementos de menú para usuarios
-        const userMenuItems = document.querySelectorAll('#btn-user-management, #btn-user-management-from-departments');
+        const departmentsBtn = document.getElementById('btn-navigate-departments');
+        const usersBtn = document.getElementById('btn-navigate-users');
         
         // Configurar visibilidad según el rol
         if (userRole === 'Administrador') {
             // Administrador puede ver todo
-            departmentMenuItems.forEach(item => {
-                if (item) item.classList.remove('hidden');
-            });
-            userMenuItems.forEach(item => {
-                if (item) item.classList.remove('hidden');
-            });
+            if (departmentsBtn) departmentsBtn.classList.remove('hidden');
+            if (usersBtn) usersBtn.classList.remove('hidden');
         } else if (userRole === 'Responsable') {
             // Responsable puede ver departamentos pero no usuarios
-            departmentMenuItems.forEach(item => {
-                if (item) item.classList.remove('hidden');
-            });
-            userMenuItems.forEach(item => {
-                if (item) item.classList.add('hidden');
-            });
+            if (departmentsBtn) departmentsBtn.classList.remove('hidden');
+            if (usersBtn) usersBtn.classList.add('hidden');
         } else {
             // Coordinador y Usuario no pueden ver departamentos ni usuarios
-            departmentMenuItems.forEach(item => {
-                if (item) item.classList.add('hidden');
-            });
-            userMenuItems.forEach(item => {
-                if (item) item.classList.add('hidden');
-            });
+            if (departmentsBtn) departmentsBtn.classList.add('hidden');
+            if (usersBtn) usersBtn.classList.add('hidden');
         }
         
     } catch (error) {

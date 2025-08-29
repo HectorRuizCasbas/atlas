@@ -568,7 +568,7 @@ export const loadTasks = async () => {
             return;
         }
 
-        const tasks = await getTasks();
+        const tasks = await getUserTasks();
         
         // Almacenar las tareas globalmente para el cambio de vista
         window.currentTasks = tasks;
@@ -641,13 +641,13 @@ export const setupFilterEventListeners = () => {
     filterElements.forEach(filterId => {
         const element = document.getElementById(filterId);
         if (element) {
-            element.addEventListener('change', loadTasks);
+            element.addEventListener('change', renderCurrentTasks);
             if (filterId === 'filter-text') {
                 // Para el campo de texto, usar input con debounce
                 let timeout;
                 element.addEventListener('input', () => {
                     clearTimeout(timeout);
-                    timeout = setTimeout(loadTasks, 300);
+                    timeout = setTimeout(renderCurrentTasks, 300);
                 });
             }
         }
@@ -664,7 +664,7 @@ export const setupFilterEventListeners = () => {
             document.getElementById('filter-assigned-to').value = '';
             
             // Recargar tareas
-            loadTasks();
+            renderCurrentTasks();
         });
     }
 };
@@ -982,11 +982,49 @@ export const toggleViewMode = () => {
 };
 
 /**
+ * Obtiene las tareas filtradas según los criterios de búsqueda
+ */
+export const getFilteredTasks = () => {
+    const allTasks = window.currentTasks || [];
+    
+    // Obtener valores de los filtros
+    const textFilter = document.getElementById('filter-text')?.value.toLowerCase() || '';
+    const stateFilter = document.getElementById('filter-state')?.value || '';
+    const priorityFilter = document.getElementById('filter-priority')?.value || '';
+    const assignedFilter = document.getElementById('filter-assigned-to')?.value || '';
+    
+    return allTasks.filter(task => {
+        // Filtro de texto (busca en título y descripción)
+        const matchesText = !textFilter || 
+            task.titulo.toLowerCase().includes(textFilter) ||
+            (task.descripcion && task.descripcion.toLowerCase().includes(textFilter));
+        
+        // Filtro de estado
+        let matchesState = true;
+        if (stateFilter === 'OPEN_TASKS') {
+            matchesState = task.estado !== 'Finalizada';
+        } else if (stateFilter === 'COMPLETED_TASKS') {
+            matchesState = task.estado === 'Finalizada';
+        } else if (stateFilter && stateFilter !== '') {
+            matchesState = task.estado === stateFilter;
+        }
+        
+        // Filtro de prioridad
+        const matchesPriority = !priorityFilter || task.prioridad === priorityFilter;
+        
+        // Filtro de asignación
+        const matchesAssigned = !assignedFilter || task.assigned_to === assignedFilter;
+        
+        return matchesText && matchesState && matchesPriority && matchesAssigned;
+    });
+};
+
+/**
  * Renderiza las tareas actuales según el modo de vista
  */
 export const renderCurrentTasks = () => {
-    // Usar las tareas ya cargadas desde loadTasks
-    const tasks = window.currentTasks || [];
+    // Usar las tareas filtradas
+    const tasks = getFilteredTasks();
     
     if (currentViewMode === 'cards') {
         renderTaskCards(tasks);

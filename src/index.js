@@ -115,11 +115,21 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const profile = await getCurrentUserProfile();
             
+            if (!profile) {
+                console.error('No se pudo obtener el perfil del usuario');
+                return;
+            }
+            
+            console.log('Perfil del usuario obtenido:', profile);
+            
             // Actualizar elementos de la interfaz con información del usuario
             const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management, #current-user-department-management');
+            const displayName = profile.full_name || profile.username || 'Usuario';
+            
             currentUserElements.forEach(element => {
                 if (element) {
-                    element.textContent = profile.full_name || profile.username;
+                    element.textContent = displayName;
+                    console.log(`Elemento actualizado: ${element.id} = ${displayName}`);
                 }
             });
             
@@ -127,22 +137,22 @@ document.addEventListener('DOMContentLoaded', () => {
             await updateLastActivity();
             
             // Mostrar/ocultar opciones según el rol
-            const userManagementBtn = document.getElementById('btn-user-management');
-            const departmentManagementBtn = document.getElementById('btn-department-management');
+            const navigateUsersBtn = document.getElementById('btn-navigate-users');
+            const navigateDepartmentsBtn = document.getElementById('btn-navigate-departments');
             
-            if (userManagementBtn) {
+            if (navigateUsersBtn) {
                 if (profile.role === 'Administrador') {
-                    userManagementBtn.classList.remove('hidden');
+                    navigateUsersBtn.classList.remove('hidden');
                 } else {
-                    userManagementBtn.classList.add('hidden');
+                    navigateUsersBtn.classList.add('hidden');
                 }
             }
             
-            if (departmentManagementBtn) {
+            if (navigateDepartmentsBtn) {
                 if (profile.role === 'Administrador' || profile.role === 'Responsable') {
-                    departmentManagementBtn.classList.remove('hidden');
+                    navigateDepartmentsBtn.classList.remove('hidden');
                 } else {
-                    departmentManagementBtn.classList.add('hidden');
+                    navigateDepartmentsBtn.classList.add('hidden');
                 }
             }
             
@@ -513,51 +523,18 @@ async function initializeApp() {
         // Limpiar estado de UI al inicializar (especialmente importante en F5)
         clearUIState();
         
-        // Verificar si hay una sesión activa
-        const sessionActive = await hasActiveSession();
+        console.log('Aplicación inicializada, mostrando pantalla de login');
         
-        if (sessionActive) {
-            console.log('Sesión activa detectada, inicializando módulos...');
-            
-            // Inicializar sesión del usuario
-            await initializeUserSession();
-            
-            // Mostrar pantalla principal
-            const loginScreen = document.getElementById('screen-login');
-            const mainScreen = document.getElementById('screen-main');
-            if (loginScreen && mainScreen) {
-                loginScreen.classList.add('hidden');
-                mainScreen.classList.remove('hidden');
-            }
-            
-            // Inicializar módulos que requieren sesión
-            await initializeTaskManagement();
-            initializeUserManagement();
-            initializeDepartmentManagement();
-            
-            // Inicializar toggle de vista de tareas
-            const toggleViewBtn = document.getElementById('btn-toggle-view');
-            if (toggleViewBtn) {
-                toggleViewBtn.addEventListener('click', toggleViewMode);
-            }
-            
-            // Inicializar menús hamburguesa con sesión activa
-            await initializeHamburgerMenus();
-        } else {
-            console.log('No hay sesión activa, mostrando pantalla de login');
-            
-            // Asegurar que se muestre la pantalla de login
-            const loginScreen = document.getElementById('screen-login');
-            const mainScreen = document.getElementById('screen-main');
-            if (loginScreen && mainScreen) {
-                mainScreen.classList.add('hidden');
-                loginScreen.classList.remove('hidden');
-            }
-            // Inicializar menús hamburguesa básicos sin permisos
-            initializeBasicHamburgerMenus();
+        // Siempre mostrar la pantalla de login al iniciar
+        const loginScreen = document.getElementById('screen-login');
+        const mainScreen = document.getElementById('screen-main');
+        if (loginScreen && mainScreen) {
+            mainScreen.classList.add('hidden');
+            loginScreen.classList.remove('hidden');
         }
         
-        // No inicializar menús aquí - se hace según el estado de sesión
+        // Inicializar menús hamburguesa básicos sin permisos
+        initializeBasicHamburgerMenus();
         
     } catch (error) {
         console.error('Error inicializando aplicación:', error);

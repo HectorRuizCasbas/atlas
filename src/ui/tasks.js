@@ -1,7 +1,17 @@
 // src/ui/tasks.js
 // Funciones para la gestión de tareas
 
-import { createTask, getCurrentUserProfile, getSupervisedUsers, getUserTasks, getTaskWithHistory, sendChatMessage, subscribeToTaskHistory, hasActiveSession, getDepartments } from '../api/supabase.js';
+import { 
+    createTask, 
+    getUserTasks, 
+    getTaskWithHistory, 
+    sendChatMessage, 
+    subscribeToTaskHistory, 
+    getSupervisedUsers, 
+    getCurrentUserProfile,
+    getDepartments,
+    updateTaskWithHistory
+} from '../api/supabase.js';
 
 /**
  * Muestra un mensaje toast al usuario
@@ -1066,15 +1076,90 @@ const loadTaskDetailsForm = async (task) => {
     document.getElementById('task-detail-priority').value = task.prioridad || 'Media';
     document.getElementById('task-detail-private').checked = task.privada || false;
     
-    // Cargar dropdown de usuarios asignados
-    await loadTaskDetailAssignedUsers(task.asignado_a);
+    // Cargar departamentos y usuarios
+    await loadTaskDetailDepartments(task.departamento);
+    await loadTaskDetailAssignedUsers(task.asignado_a, task.departamento);
+    
+    // Configurar lógica de privacidad
+    await updateTaskDetailPrivateLogic(task);
+    
+    // Configurar event listeners para cambios dinámicos
+    setupTaskDetailEventListeners(task);
+};
+
+/**
+ * Carga los departamentos disponibles en el modal de edición
+ * @param {string} currentDepartmentId - ID del departamento actual
+ */
+const loadTaskDetailDepartments = async (currentDepartmentId) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        const departments = await getDepartments();
+        
+        const departmentSelect = document.getElementById('task-detail-department');
+        departmentSelect.innerHTML = '';
+        
+        // Agregar opción "Sin departamento"
+        const noDeptOption = document.createElement('option');
+        noDeptOption.value = '';
+        noDeptOption.textContent = 'Sin departamento';
+        if (!currentDepartmentId) {
+            noDeptOption.selected = true;
+        }
+        departmentSelect.appendChild(noDeptOption);
+        
+        // Lógica según el rol del usuario
+        if (currentProfile.role === 'Administrador') {
+            // Administradores pueden elegir cualquier departamento
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.nombre;
+                if (dept.id === currentDepartmentId) {
+                    option.selected = true;
+                }
+                departmentSelect.appendChild(option);
+            });
+        } else if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
+            // Coordinadores y Responsables pueden elegir su departamento y otros
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.nombre;
+                if (dept.id === currentDepartmentId) {
+                    option.selected = true;
+                }
+                departmentSelect.appendChild(option);
+            });
+        } else if (currentProfile.role === 'Usuario' && currentProfile.departamento_id) {
+            // Usuarios estándar solo pueden elegir su departamento (bloqueado)
+            const userDept = departments.find(d => d.id === currentProfile.departamento_id);
+            if (userDept) {
+                const option = document.createElement('option');
+                option.value = userDept.id;
+                option.textContent = userDept.nombre;
+                option.selected = true;
+                departmentSelect.appendChild(option);
+                departmentSelect.disabled = true;
+                departmentSelect.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            // Usuarios sin departamento - solo "Sin departamento" (bloqueado)
+            departmentSelect.disabled = true;
+            departmentSelect.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        
+    } catch (error) {
+        console.error('Error cargando departamentos para edición:', error);
+    }
 };
 
 /**
  * Carga el dropdown de usuarios para asignación en el modal
  * @param {string} currentAssignedId - ID del usuario actualmente asignado
+ * @param {string} selectedDepartmentId - ID del departamento seleccionado
  */
-const loadTaskDetailAssignedUsers = async (currentAssignedId) => {
+const loadTaskDetailAssignedUsers = async (currentAssignedId, selectedDepartmentId) => {
     try {
         const currentProfile = await getCurrentUserProfile();
         const supervisedUsers = await getSupervisedUsers();
@@ -1082,28 +1167,348 @@ const loadTaskDetailAssignedUsers = async (currentAssignedId) => {
         const assignedSelect = document.getElementById('task-detail-assigned');
         assignedSelect.innerHTML = '';
         
-        // Agregar usuario actual
-        const currentOption = document.createElement('option');
-        currentOption.value = currentProfile.id;
-        currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
-        if (currentAssignedId === currentProfile.id) {
-            currentOption.selected = true;
+        // Agregar opción "Sin usuario asignado"
+        const noUserOption = document.createElement('option');
+        noUserOption.value = '';
+        noUserOption.textContent = 'Sin usuario asignado';
+        if (!currentAssignedId) {
+            noUserOption.selected = true;
         }
-        assignedSelect.appendChild(currentOption);
+        assignedSelect.appendChild(noUserOption);
         
-        // Agregar usuarios supervisados
-        supervisedUsers.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.id;
-            option.textContent = user.full_name || user.username;
-            if (currentAssignedId === user.id) {
-                option.selected = true;
+        if (currentProfile.role === 'Usuario' && !currentProfile.departamento_id) {
+            // Usuarios sin departamento - solo pueden asignarse a sí mismos (bloqueado)
+            const currentOption = document.createElement('option');
+            currentOption.value = currentProfile.id;
+            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+            currentOption.selected = true;
+            assignedSelect.appendChild(currentOption);
+            assignedSelect.disabled = true;
+            assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+        } else if (currentProfile.role === 'Usuario' && currentProfile.departamento_id) {
+            // Usuarios estándar - solo pueden asignarse a sí mismos (bloqueado)
+            const currentOption = document.createElement('option');
+            currentOption.value = currentProfile.id;
+            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+            currentOption.selected = true;
+            assignedSelect.appendChild(currentOption);
+            assignedSelect.disabled = true;
+            assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+        } else if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
+            if (selectedDepartmentId === currentProfile.departamento_id) {
+                // En su propio departamento - pueden elegir usuarios del departamento
+                assignedSelect.disabled = false;
+                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                // Agregar usuario actual
+                const currentOption = document.createElement('option');
+                currentOption.value = currentProfile.id;
+                currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+                if (currentAssignedId === currentProfile.id) {
+                    currentOption.selected = true;
+                }
+                assignedSelect.appendChild(currentOption);
+
+                // Agregar usuarios del departamento
+                supervisedUsers.forEach(user => {
+                    if (user.departamento_id === selectedDepartmentId) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name || user.username;
+                        if (currentAssignedId === user.id) {
+                            option.selected = true;
+                        }
+                        assignedSelect.appendChild(option);
+                    }
+                });
+            } else if (selectedDepartmentId && selectedDepartmentId !== currentProfile.departamento_id) {
+                // Departamento diferente - sin usuarios disponibles, queda "Sin usuario asignado"
+                assignedSelect.disabled = true;
+                assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                // Sin departamento seleccionado - pueden elegir cualquier usuario supervisado
+                assignedSelect.disabled = false;
+                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                // Agregar usuario actual
+                const currentOption = document.createElement('option');
+                currentOption.value = currentProfile.id;
+                currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+                if (currentAssignedId === currentProfile.id) {
+                    currentOption.selected = true;
+                }
+                assignedSelect.appendChild(currentOption);
+                
+                // Agregar usuarios supervisados
+                supervisedUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.full_name || user.username;
+                    if (currentAssignedId === user.id) {
+                        option.selected = true;
+                    }
+                    assignedSelect.appendChild(option);
+                });
             }
-            assignedSelect.appendChild(option);
-        });
+        } else if (currentProfile.role === 'Administrador') {
+            // Administradores pueden elegir cualquier usuario
+            assignedSelect.disabled = false;
+            assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // Agregar usuario actual
+            const currentOption = document.createElement('option');
+            currentOption.value = currentProfile.id;
+            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+            if (currentAssignedId === currentProfile.id) {
+                currentOption.selected = true;
+            }
+            assignedSelect.appendChild(currentOption);
+            
+            if (selectedDepartmentId) {
+                // Cargar usuarios del departamento seleccionado
+                supervisedUsers.forEach(user => {
+                    if (user.departamento_id === selectedDepartmentId) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name || user.username;
+                        if (currentAssignedId === user.id) {
+                            option.selected = true;
+                        }
+                        assignedSelect.appendChild(option);
+                    }
+                });
+            } else {
+                // Sin departamento - mostrar todos los usuarios supervisados
+                supervisedUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.full_name || user.username;
+                    if (currentAssignedId === user.id) {
+                        option.selected = true;
+                    }
+                    assignedSelect.appendChild(option);
+                });
+            }
+        }
         
     } catch (error) {
         console.error('Error cargando usuarios para asignación:', error);
+    }
+};
+
+/**
+ * Actualiza la lógica del checkbox de tarea privada en el modal de edición
+ * @param {object} task - Datos de la tarea
+ */
+const updateTaskDetailPrivateLogic = async (task) => {
+    try {
+        const privateCheckbox = document.getElementById('task-detail-private');
+        const departmentSelect = document.getElementById('task-detail-department');
+        const assignedSelect = document.getElementById('task-detail-assigned');
+        if (!privateCheckbox || !departmentSelect || !assignedSelect) return;
+
+        const currentProfile = await getCurrentUserProfile();
+        const selectedDepartmentId = departmentSelect.value;
+        const selectedUserId = assignedSelect.value;
+
+        // Reset checkbox state
+        privateCheckbox.disabled = false;
+        privateCheckbox.parentElement.classList.remove('opacity-50');
+
+        // Una tarea solo se puede marcar como privada si:
+        // 1. La tarea está asignada al mismo usuario que la creó
+        // 2. Y es el usuario activo (quien está editando)
+        const canBePrivate = (
+            task.creado_por === currentProfile.id && // El usuario actual es el creador
+            selectedUserId === currentProfile.id && // La tarea está asignada al usuario actual
+            task.creado_por === selectedUserId // El creador es el mismo que el asignado
+        );
+
+        if (!canBePrivate) {
+            privateCheckbox.checked = false;
+            privateCheckbox.disabled = true;
+            privateCheckbox.parentElement.classList.add('opacity-50');
+        }
+
+    } catch (error) {
+        console.error('Error actualizando lógica de checkbox privado:', error);
+    }
+};
+
+/**
+ * Configura los event listeners para el modal de edición de tareas
+ * @param {object} task - Datos de la tarea
+ */
+const setupTaskDetailEventListeners = (task) => {
+    const departmentSelect = document.getElementById('task-detail-department');
+    const assignedSelect = document.getElementById('task-detail-assigned');
+    
+    if (departmentSelect) {
+        departmentSelect.addEventListener('change', async () => {
+            const selectedDepartmentId = departmentSelect.value;
+            await loadTaskDetailAssignedUsers(assignedSelect.value, selectedDepartmentId);
+            await updateTaskDetailPrivateLogic(task);
+        });
+    }
+    
+    if (assignedSelect) {
+        assignedSelect.addEventListener('change', async () => {
+            await updateTaskDetailPrivateLogic(task);
+        });
+    }
+    
+    // Event listener para guardar cambios
+    const saveBtn = document.getElementById('btn-save-task-changes');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => saveTaskChanges(task));
+    }
+};
+
+/**
+ * Guarda los cambios realizados en la tarea
+ * @param {object} originalTask - Datos originales de la tarea
+ */
+const saveTaskChanges = async (originalTask) => {
+    try {
+        const saveBtn = document.getElementById('btn-save-task-changes');
+        if (!saveBtn) return;
+
+        // Deshabilitar botón durante el proceso
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = 'Guardando...';
+        saveBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        // Obtener datos del formulario
+        const newData = {
+            titulo: document.getElementById('task-detail-title').value,
+            descripcion: document.getElementById('task-detail-description').value,
+            estado: document.getElementById('task-detail-status').value,
+            prioridad: document.getElementById('task-detail-priority').value,
+            departamento: document.getElementById('task-detail-department').value || null,
+            asignado_a: document.getElementById('task-detail-assigned').value || null,
+            privada: document.getElementById('task-detail-private').checked
+        };
+
+        // Detectar cambios y crear entradas de historial
+        const changes = [];
+        
+        if (originalTask.titulo !== newData.titulo) {
+            changes.push({
+                campo: 'titulo',
+                valor_anterior: originalTask.titulo,
+                valor_nuevo: newData.titulo,
+                comentario: `Título cambiado de "${originalTask.titulo}" a "${newData.titulo}"`
+            });
+        }
+        
+        if (originalTask.descripcion !== newData.descripcion) {
+            changes.push({
+                campo: 'descripcion',
+                valor_anterior: originalTask.descripcion || '',
+                valor_nuevo: newData.descripcion || '',
+                comentario: `Descripción actualizada`
+            });
+        }
+        
+        if (originalTask.estado !== newData.estado) {
+            changes.push({
+                campo: 'estado',
+                valor_anterior: originalTask.estado,
+                valor_nuevo: newData.estado,
+                comentario: `Estado cambiado de "${originalTask.estado}" a "${newData.estado}"`
+            });
+        }
+        
+        if (originalTask.prioridad !== newData.prioridad) {
+            changes.push({
+                campo: 'prioridad',
+                valor_anterior: originalTask.prioridad,
+                valor_nuevo: newData.prioridad,
+                comentario: `Prioridad cambiada de "${originalTask.prioridad}" a "${newData.prioridad}"`
+            });
+        }
+        
+        if (originalTask.departamento !== newData.departamento) {
+            // Obtener nombres de departamentos para el comentario
+            const departments = await getDepartments();
+            const oldDeptName = originalTask.departamento ? 
+                departments.find(d => d.id === originalTask.departamento)?.nombre || 'Departamento desconocido' : 
+                'Sin departamento';
+            const newDeptName = newData.departamento ? 
+                departments.find(d => d.id === newData.departamento)?.nombre || 'Departamento desconocido' : 
+                'Sin departamento';
+                
+            changes.push({
+                campo: 'departamento',
+                valor_anterior: originalTask.departamento || '',
+                valor_nuevo: newData.departamento || '',
+                comentario: `Departamento cambiado de "${oldDeptName}" a "${newDeptName}"`
+            });
+        }
+        
+        if (originalTask.asignado_a !== newData.asignado_a) {
+            // Obtener nombres de usuarios para el comentario
+            const users = await getSupervisedUsers();
+            const currentProfile = await getCurrentUserProfile();
+            const allUsers = [currentProfile, ...users];
+            
+            const oldUserName = originalTask.asignado_a ? 
+                allUsers.find(u => u.id === originalTask.asignado_a)?.full_name || 
+                allUsers.find(u => u.id === originalTask.asignado_a)?.username || 'Usuario desconocido' : 
+                'Sin asignar';
+            const newUserName = newData.asignado_a ? 
+                allUsers.find(u => u.id === newData.asignado_a)?.full_name || 
+                allUsers.find(u => u.id === newData.asignado_a)?.username || 'Usuario desconocido' : 
+                'Sin asignar';
+                
+            changes.push({
+                campo: 'asignado_a',
+                valor_anterior: originalTask.asignado_a || '',
+                valor_nuevo: newData.asignado_a || '',
+                comentario: `Asignación cambiada de "${oldUserName}" a "${newUserName}"`
+            });
+        }
+        
+        if (originalTask.privada !== newData.privada) {
+            changes.push({
+                campo: 'privada',
+                valor_anterior: originalTask.privada ? 'Sí' : 'No',
+                valor_nuevo: newData.privada ? 'Sí' : 'No',
+                comentario: `Privacidad cambiada a "${newData.privada ? 'Privada' : 'Pública'}"`
+            });
+        }
+
+        if (changes.length === 0) {
+            showToast('No hay cambios para guardar', 'info');
+            return;
+        }
+
+        // Llamar a la función de Supabase para actualizar la tarea
+        const result = await updateTaskWithHistory(originalTask.id, newData, changes);
+
+        if (result.success) {
+            showToast('Tarea actualizada correctamente', 'success');
+            
+            // Actualizar los datos originales para futuras comparaciones
+            Object.assign(originalTask, newData);
+            
+            // Recargar la lista de tareas
+            await loadTasks();
+        } else {
+            throw new Error(result.error || 'Error desconocido al actualizar la tarea');
+        }
+
+    } catch (error) {
+        console.error('Error guardando cambios de tarea:', error);
+        showToast(error.message || 'Error al guardar los cambios', 'error');
+    } finally {
+        // Rehabilitar botón
+        const saveBtn = document.getElementById('btn-save-task-changes');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = 'Guardar Cambios';
+            saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     }
 };
 
@@ -1163,21 +1568,34 @@ const createHistoryMessage = (entry) => {
         messageDiv.appendChild(bubble);
         
     } else {
-        // Mensaje de historial en cursiva
-        messageDiv.className = 'text-center';
+        // Mensaje de sistema alineado a la izquierda
+        messageDiv.className = 'flex justify-start';
         
-        const historyText = document.createElement('div');
-        historyText.className = 'text-sm text-slate-400 italic bg-slate-800 px-3 py-2 rounded-lg inline-block';
+        const systemBubble = document.createElement('div');
+        systemBubble.className = 'max-w-xs lg:max-w-md px-3 py-2 rounded-lg bg-slate-800 text-slate-300 border-l-4 border-blue-500';
+        
+        const systemIcon = document.createElement('div');
+        systemIcon.className = 'text-xs font-medium mb-1 text-blue-400 flex items-center';
+        systemIcon.innerHTML = '<svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>Sistema';
+        
+        const messageText = document.createElement('div');
+        messageText.className = 'text-sm';
         
         if (entry.comentario) {
-            historyText.textContent = entry.comentario;
+            messageText.textContent = entry.comentario;
         } else {
             const userName = entry.usuario_profile?.full_name || entry.usuario_profile?.username || 'Usuario';
-            const time = formatTime(entry.created_at);
-            historyText.textContent = `[${userName}] ${entry.campo_modificado}: ${entry.valor_nuevo} (${time})`;
+            messageText.textContent = `${userName} modificó ${entry.campo_modificado}: ${entry.valor_nuevo}`;
         }
         
-        messageDiv.appendChild(historyText);
+        const timeText = document.createElement('div');
+        timeText.className = 'text-xs opacity-75 mt-1 text-slate-400';
+        timeText.textContent = formatTime(entry.created_at);
+        
+        systemBubble.appendChild(systemIcon);
+        systemBubble.appendChild(messageText);
+        systemBubble.appendChild(timeText);
+        messageDiv.appendChild(systemBubble);
     }
     
     return messageDiv;

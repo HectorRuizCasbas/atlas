@@ -1002,6 +1002,72 @@ export const createDepartmentWithResponsible = async (departmentData) => {
 };
 
 /**
+ * Actualiza una tarea y registra los cambios en el historial
+ * @param {string} taskId - ID de la tarea
+ * @param {object} newData - Nuevos datos de la tarea
+ * @param {Array} changes - Array de cambios para el historial
+ * @returns {Promise<object>} - Resultado de la actualización
+ */
+export const updateTaskWithHistory = async (taskId, newData, changes) => {
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+            throw new Error('No hay sesión activa');
+        }
+
+        const currentProfile = await getCurrentUserProfile();
+
+        // Actualizar la tarea
+        const { data: updatedTask, error: taskError } = await supabaseClient
+            .from('tasks')
+            .update({
+                titulo: newData.titulo,
+                descripcion: newData.descripcion,
+                estado: newData.estado,
+                prioridad: newData.prioridad,
+                departamento: newData.departamento,
+                asignado_a: newData.asignado_a,
+                privada: newData.privada,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', taskId)
+            .select()
+            .single();
+
+        if (taskError) {
+            throw new Error('Error actualizando tarea: ' + taskError.message);
+        }
+
+        // Registrar cambios en el historial
+        if (changes && changes.length > 0) {
+            const historyEntries = changes.map(change => ({
+                task_id: taskId,
+                usuario_id: currentProfile.id,
+                campo_modificado: change.campo,
+                valor_anterior: change.valor_anterior,
+                valor_nuevo: change.valor_nuevo,
+                comentario: change.comentario
+            }));
+
+            const { error: historyError } = await supabaseClient
+                .from('task_history')
+                .insert(historyEntries);
+
+            if (historyError) {
+                console.error('Error registrando historial:', historyError);
+                // No fallar la actualización por error en historial
+            }
+        }
+
+        return { success: true, task: updatedTask };
+    } catch (error) {
+        console.error('Error actualizando tarea con historial:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
  * Cierra la sesión del usuario actual
  * @returns {Promise<void>}
  */

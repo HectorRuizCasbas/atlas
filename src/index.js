@@ -474,7 +474,7 @@ function createHamburgerMenu() {
 // Función para insertar el menú hamburguesa en la pantalla actual
 function insertHamburgerMenu(screenName) {
     const containers = {
-        'tasks': document.querySelector('#screen-main #hamburger-menu-container'),
+        'tasks': document.querySelector('#screen-main #unified-hamburger-menu'),
         'users': document.querySelector('#screen-user-management #hamburger-menu-container'),
         'departments': document.querySelector('#screen-department-management #hamburger-menu-container')
     };
@@ -493,11 +493,15 @@ function insertHamburgerMenu(screenName) {
         
         // Reconfigurar event listeners después de insertar el HTML
         setupHamburgerEventListeners();
+    } else {
+        console.error(`No se encontró el contenedor del menú hamburguesa para la pantalla: ${screenName}`);
     }
 }
 
 // Función para navegar entre pantallas
 function navigateToScreen(screenName) {
+    console.log(`Navegando a la pantalla: ${screenName}`);
+    
     // Ocultar todas las pantallas
     const screens = {
         'tasks': document.getElementById('screen-main'),
@@ -519,11 +523,13 @@ function navigateToScreen(screenName) {
         currentScreen = screenName;
         
         // Insertar menú hamburguesa en la pantalla actual
+        console.log(`Insertando menú hamburguesa para: ${screenName}`);
         insertHamburgerMenu(screenName);
         
         // Configurar permisos y actualizar menú
         setupMenuPermissions().then(() => {
             updateHamburgerMenu();
+            console.log(`Menú hamburguesa configurado para: ${screenName}`);
         });
         
         // Cargar datos según la pantalla
@@ -532,8 +538,11 @@ function navigateToScreen(screenName) {
         } else if (screenName === 'departments') {
             showDepartmentManagementScreen();
         } else if (screenName === 'tasks') {
-            showMainScreen();
+            // Para tasks no necesitamos llamar showMainScreen ya que no existe
+            console.log('Pantalla de tareas mostrada');
         }
+    } else {
+        console.error(`No se encontró la pantalla: ${screenName}`);
     }
 }
 
@@ -575,9 +584,20 @@ function setupHamburgerEventListeners() {
     
     // Event listener para el botón hamburguesa
     if (hamburgerButton && hamburgerDropdown) {
-        hamburgerButton.addEventListener('click', (e) => {
+        // Remover event listeners existentes para evitar duplicados
+        hamburgerButton.replaceWith(hamburgerButton.cloneNode(true));
+        const newHamburgerButton = document.getElementById('hamburger-button');
+        
+        newHamburgerButton.addEventListener('click', (e) => {
             e.stopPropagation();
             hamburgerDropdown.classList.toggle('show');
+        });
+        
+        console.log('Event listener del botón hamburguesa configurado correctamente');
+    } else {
+        console.error('No se encontraron elementos del menú hamburguesa:', {
+            button: !!hamburgerButton,
+            dropdown: !!hamburgerDropdown
         });
     }
     
@@ -585,6 +605,7 @@ function setupHamburgerEventListeners() {
     const navigateTasksBtn = document.getElementById('btn-navigate-tasks');
     if (navigateTasksBtn) {
         navigateTasksBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
             navigateToScreen('tasks');
         });
     }
@@ -592,6 +613,7 @@ function setupHamburgerEventListeners() {
     const navigateDepartmentsBtn = document.getElementById('btn-navigate-departments');
     if (navigateDepartmentsBtn) {
         navigateDepartmentsBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
             navigateToScreen('departments');
         });
     }
@@ -599,6 +621,7 @@ function setupHamburgerEventListeners() {
     const navigateUsersBtn = document.getElementById('btn-navigate-users');
     if (navigateUsersBtn) {
         navigateUsersBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
             navigateToScreen('users');
         });
     }
@@ -606,7 +629,38 @@ function setupHamburgerEventListeners() {
     // Event listener para logout
     const logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
+        logoutBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
+            handleLogout();
+        });
+    }
+    
+    // Event listeners para otras opciones del menú
+    const changePasswordBtn = document.getElementById('btn-change-password');
+    if (changePasswordBtn) {
+        changePasswordBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
+            // Aquí se puede agregar la funcionalidad de cambiar contraseña
+            console.log('Cambiar contraseña clickeado');
+        });
+    }
+    
+    const deleteAccountBtn = document.getElementById('btn-delete-own-account');
+    if (deleteAccountBtn) {
+        deleteAccountBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
+            // Aquí se puede agregar la funcionalidad de eliminar cuenta
+            console.log('Eliminar cuenta clickeado');
+        });
+    }
+    
+    const helpBtn = document.getElementById('btn-help');
+    if (helpBtn) {
+        helpBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
+            // Aquí se puede agregar la funcionalidad de ayuda
+            console.log('Ayuda clickeado');
+        });
     }
 }
 

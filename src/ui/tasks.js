@@ -264,13 +264,35 @@ export const getPriorityColor = (priority) => {
 };
 
 /**
+ * Obtiene el color del estado
+ * @param {string} status - Estado de la tarea
+ * @returns {string} - Clases CSS para el color
+ */
+export const getStatusColor = (status) => {
+    switch (status) {
+        case 'Sin iniciar':
+            return 'bg-gray-600 text-white';
+        case 'En progreso':
+            return 'bg-blue-600 text-white';
+        case 'En espera':
+            return 'bg-yellow-600 text-white';
+        case 'Finalizada':
+            return 'bg-green-600 text-white';
+        default:
+            return 'bg-gray-600 text-white';
+    }
+};
+
+/**
  * Crea una tarjeta de tarea para la vista de grid
  * @param {object} task - Objeto de tarea
  * @returns {string} - HTML de la tarjeta
  */
 export const createTaskCard = (task) => {
     const priorityColor = getPriorityColor(task.prioridad);
+    const statusColor = getStatusColor(task.estado);
     const assignedName = task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
+    const creatorName = task.creator_profile?.full_name || task.creator_profile?.username || 'Desconocido';
     const isPrivate = task.privada;
     
     return `
@@ -291,13 +313,22 @@ export const createTaskCard = (task) => {
             
             <div class="space-y-2 text-sm">
                 <div class="flex items-center text-slate-300">
+                    <span class="font-medium mr-2">Creador:</span>
+                    <span>${creatorName}</span>
+                </div>
+                
+                <div class="flex items-center text-slate-300">
                     <span class="font-medium mr-2">Asignada a:</span>
                     <span>${assignedName}</span>
                 </div>
                 
-                <div class="flex items-center text-slate-300">
-                    <span class="font-medium mr-2">Última modificación:</span>
-                    <span>${formatDate(task.updated_at)}</span>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <span class="font-medium mr-2 text-slate-300">Estado:</span>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor}">
+                            ${task.estado}
+                        </span>
+                    </div>
                 </div>
                 
                 <div class="flex items-center justify-between">
@@ -316,7 +347,21 @@ export const createTaskCard = (task) => {
                                 <path d="m7 11V7a5 5 0 0 1 10 0v4"></path>
                             </svg>
                         </div>
-                    ` : ''}
+                    ` : `
+                        <div class="flex items-center text-slate-400" title="Tarea pública">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="m12 1v6m0 6v6"></path>
+                                <path d="m17 7-3 3 3 3"></path>
+                                <path d="m7 7 3 3-3 3"></path>
+                            </svg>
+                        </div>
+                    `}
+                </div>
+                
+                <div class="flex items-center text-slate-300 pt-1 border-t border-slate-700">
+                    <span class="font-medium mr-2">Última modificación:</span>
+                    <span class="text-xs">${formatDate(task.updated_at)}</span>
                 </div>
             </div>
         </div>
@@ -324,9 +369,133 @@ export const createTaskCard = (task) => {
 };
 
 /**
+ * Crea una fila de tarea para la vista de tabla
+ * @param {object} task - Objeto de tarea
+ * @returns {string} - HTML de la fila
+ */
+export const createTaskTableRow = (task) => {
+    const priorityColor = getPriorityColor(task.prioridad);
+    const statusColor = getStatusColor(task.estado);
+    const assignedName = task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
+    const creatorName = task.creator_profile?.full_name || task.creator_profile?.username || 'Desconocido';
+    const isPrivate = task.privada;
+    
+    return `
+        <tr class="hover:bg-slate-700 transition-colors cursor-pointer task-row" data-task-id="${task.id}">
+            <td class="py-3 px-4 text-white font-medium">${task.titulo}</td>
+            <td class="py-3 px-4 text-slate-300">${creatorName}</td>
+            <td class="py-3 px-4 text-slate-300">${assignedName}</td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${priorityColor}">
+                    ${task.prioridad}
+                </span>
+            </td>
+            <td class="py-3 px-4">
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${statusColor}">
+                    ${task.estado}
+                </span>
+            </td>
+            <td class="py-3 px-4 text-center">
+                ${isPrivate ? `
+                    <div class="flex justify-center items-center text-amber-400" title="Tarea privada">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <circle cx="12" cy="16" r="1"></circle>
+                            <path d="m7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                ` : `
+                    <div class="flex justify-center items-center text-slate-400" title="Tarea pública">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="m12 1v6m0 6v6"></path>
+                            <path d="m17 7-3 3 3 3"></path>
+                            <path d="m7 7 3 3-3 3"></path>
+                        </svg>
+                    </div>
+                `}
+            </td>
+            <td class="py-3 px-4 text-slate-300 text-sm">${formatDate(task.updated_at)}</td>
+            <td class="py-3 px-4">
+                <div class="flex items-center gap-2">
+                    <button class="text-blue-400 hover:text-blue-300 transition-colors edit-task-btn" 
+                            data-task-id="${task.id}" title="Editar tarea">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
+                    <button class="text-red-400 hover:text-red-300 transition-colors delete-task-btn" 
+                            data-task-id="${task.id}" title="Eliminar tarea">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3,6 5,6 21,6"></polyline>
+                            <path d="m19,6v14a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6m3,0V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+};
+
+/**
  * Renderiza las tareas en la vista de grid
  * @param {Array} tasks - Array de tareas
  */
+/**
+ * Renderiza las tareas en la vista de tabla
+ * @param {Array} tasks - Array de tareas
+ */
+export const renderTaskTable = (tasks) => {
+    const tasksTableBody = document.getElementById('tasks-table-body');
+    if (!tasksTableBody) return;
+
+    if (tasks.length === 0) {
+        tasksTableBody.innerHTML = `
+            <tr>
+                <td colspan="8" class="text-center py-12 text-slate-400">
+                    <div class="flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mb-4 opacity-50">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="9" cy="9" r="2"/>
+                            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                        </svg>
+                        <p class="text-lg font-medium mb-2">No hay tareas</p>
+                        <p class="text-sm">Crea una nueva tarea para comenzar</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tasksTableBody.innerHTML = tasks.map(task => createTaskTableRow(task)).join('');
+    
+    // Agregar event listeners para las filas de la tabla
+    tasks.forEach(task => {
+        const taskRow = document.querySelector(`.task-row[data-task-id="${task.id}"]`);
+        if (taskRow) {
+            taskRow.addEventListener('click', (e) => {
+                // Solo abrir el modal si no se hizo clic en un botón
+                if (!e.target.closest('button')) {
+                    openTaskDetailModal(task.id);
+                }
+            });
+        }
+        
+        // Event listener para el botón de editar
+        const editBtn = document.querySelector(`.edit-task-btn[data-task-id="${task.id}"]`);
+        if (editBtn) {
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openTaskDetailModal(task.id);
+            });
+        }
+    });
+};
+
 export const renderTaskCards = (tasks) => {
     const tasksGrid = document.getElementById('tasks-grid');
     if (!tasksGrid) return;
@@ -770,5 +939,61 @@ export const initTaskDetailModal = () => {
                 closeTaskDetailModal();
             }
         });
+    }
+};
+
+// Variable para controlar el modo de vista actual
+let currentViewMode = 'cards'; // 'cards' o 'table'
+
+/**
+ * Alterna entre vista de tarjetas y tabla
+ */
+export const toggleViewMode = () => {
+    const tasksGrid = document.getElementById('tasks-grid');
+    const tasksTable = document.getElementById('tasks-table');
+    const viewModeText = document.getElementById('view-mode-text');
+    const iconCards = document.getElementById('icon-cards');
+    const iconTable = document.getElementById('icon-table');
+    
+    if (currentViewMode === 'cards') {
+        // Cambiar a vista de tabla
+        currentViewMode = 'table';
+        tasksGrid.classList.add('hidden');
+        tasksTable.classList.remove('hidden');
+        viewModeText.textContent = 'Vista de Tarjetas';
+        
+        // Cambiar iconos
+        if (iconCards) iconCards.classList.remove('hidden');
+        if (iconTable) iconTable.classList.add('hidden');
+        
+        // Renderizar tareas en tabla
+        renderCurrentTasks();
+    } else {
+        // Cambiar a vista de tarjetas
+        currentViewMode = 'cards';
+        tasksTable.classList.add('hidden');
+        tasksGrid.classList.remove('hidden');
+        viewModeText.textContent = 'Vista de Tabla';
+        
+        // Cambiar iconos
+        if (iconTable) iconTable.classList.remove('hidden');
+        if (iconCards) iconCards.classList.add('hidden');
+        
+        // Renderizar tareas en tarjetas
+        renderCurrentTasks();
+    }
+};
+
+/**
+ * Renderiza las tareas actuales según el modo de vista
+ */
+export const renderCurrentTasks = () => {
+    // Usar las tareas ya cargadas desde loadTasks
+    const tasks = window.currentTasks || [];
+    
+    if (currentViewMode === 'cards') {
+        renderTaskCards(tasks);
+    } else {
+        renderTaskTable(tasks);
     }
 };

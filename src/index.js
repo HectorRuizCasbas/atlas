@@ -4,7 +4,7 @@
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal, hideEditDepartmentModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
 import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser, hasActiveSession, getAvailableResponsibleUsers, createDepartmentWithResponsible } from './api/supabase.js';
-import { initializeTaskManagement } from './ui/tasks.js';
+import { initializeTaskManagement, toggleViewMode } from './ui/tasks.js';
 import { initializeUserManagement, showUserManagementScreen } from './ui/user-management.js';
 import { initializeDepartmentManagement, showDepartmentManagementScreen } from './ui/department-management.js';
 
@@ -197,6 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Inicializar módulos que requieren sesión
                 initializeTaskManagement();
                 initializeUserManagement();
+                
+                // Inicializar toggle de vista de tareas
+                const toggleViewBtn = document.getElementById('btn-toggle-view');
+                if (toggleViewBtn) {
+                    toggleViewBtn.addEventListener('click', toggleViewMode);
+                }
                 
                 // Limpiar formulario
                 loginUsernameInput.value = '';
@@ -534,6 +540,12 @@ async function initializeApp() {
             initializeTaskManagement();
             initializeUserManagement();
             initializeDepartmentManagement();
+            
+            // Inicializar toggle de vista de tareas
+            const toggleViewBtn = document.getElementById('btn-toggle-view');
+            if (toggleViewBtn) {
+                toggleViewBtn.addEventListener('click', toggleViewMode);
+            }
         } else {
             console.log('No hay sesión activa, mostrando pantalla de login');
             

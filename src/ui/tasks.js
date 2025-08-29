@@ -564,23 +564,20 @@ export const loadTasks = async () => {
         // Verificar si hay sesión activa antes de continuar
         const sessionActive = await hasActiveSession();
         if (!sessionActive) {
-            console.log('No hay sesión activa, omitiendo carga de tareas');
+            console.log('No hay sesión activa, redirigiendo al login');
             return;
         }
 
-        // Obtener filtros actuales
-        const filterStatus = document.getElementById('filter-state')?.value || 'OPEN_TASKS';
-        const filters = {
-            priority: document.getElementById('filter-priority')?.value || '',
-            assigned_to: document.getElementById('filter-assigned-to')?.value || '',
-            text: document.getElementById('filter-text')?.value || ''
-        };
-
-        // Obtener tareas
-        const tasks = await getUserTasks(filterStatus, filters);
+        const tasks = await getTasks();
         
-        // Renderizar en vista actual
-        renderTaskCards(tasks);
+        // Almacenar las tareas globalmente para el cambio de vista
+        window.currentTasks = tasks;
+        
+        // Renderizar según el modo de vista actual
+        renderCurrentTasks();
+        
+        // Agregar event listeners después de renderizar
+        addTaskCardEventListeners();
         
     } catch (error) {
         console.error('Error cargando tareas:', error);

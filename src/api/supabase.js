@@ -837,6 +837,120 @@ export const deleteDepartment = async (departmentId) => {
 };
 
 /**
+ * Obtiene usuarios responsables disponibles para asignar a un nuevo departamento
+ * @returns {Promise<Array>} - Lista de usuarios responsables disponibles
+ */
+export const getAvailableResponsibleUsers = async () => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden crear departamentos
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para obtener usuarios responsables');
+        }
+
+        // Obtener todos los usuarios con rol 'Responsable'
+        const { data: responsibleUsers, error } = await supabaseClient
+            .from('profiles')
+            .select(`
+                id, 
+                username, 
+                full_name, 
+                departamento_id,
+                departamentos!departamento_id(id, nombre)
+            `)
+            .eq('role', 'Responsable')
+            .order('full_name');
+
+        if (error) {
+            throw new Error('Error obteniendo usuarios responsables: ' + error.message);
+        }
+
+        // Filtrar usuarios disponibles:
+        // 1. Sin departamento
+        // 2. Con departamento que tenga más de un responsable
+        const availableUsers = [];
+        
+        for (const user of responsibleUsers || []) {
+            if (!user.departamento_id) {
+                // Usuario sin departamento - disponible
+                availableUsers.push(user);
+            } else {
+                // Verificar si su departamento actual tiene más responsables
+                const { data: departmentResponsibles, error: countError } = await supabaseClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('departamento_id', user.departamento_id)
+                    .eq('role', 'Responsable');
+
+                if (!countError && departmentResponsibles && departmentResponsibles.length > 1) {
+                    // El departamento tiene más de un responsable - disponible
+                    availableUsers.push(user);
+                }
+            }
+        }
+
+        return availableUsers;
+    } catch (error) {
+        console.error('Error obteniendo usuarios responsables disponibles:', error);
+        throw error;
+    }
+};
+
+/**
+ * Crea un nuevo departamento y asigna un responsable
+ * @param {object} departmentData - Datos del departamento (nombre, descripcion, responsable_id)
+ * @returns {Promise<object>} - Resultado de la creación
+ */
+export const createDepartmentWithResponsible = async (departmentData) => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Solo administradores pueden crear departamentos
+        if (currentProfile.role !== 'Administrador') {
+            throw new Error('No tienes permisos para crear departamentos');
+        }
+
+        // Crear el departamento
+        const { data: newDepartment, error: deptError } = await supabaseClient
+            .from('departamentos')
+            .insert({
+                nombre: departmentData.nombre,
+                descripcion: departmentData.descripcion || null
+            })
+            .select()
+            .single();
+
+        if (deptError) {
+            throw new Error('Error creando departamento: ' + deptError.message);
+        }
+
+        // Asignar el responsable al nuevo departamento
+        if (departmentData.responsable_id) {
+            const { error: assignError } = await supabaseClient
+                .from('profiles')
+                .update({ departamento_id: newDepartment.id })
+                .eq('id', departmentData.responsable_id);
+
+            if (assignError) {
+                // Si falla la asignación, eliminar el departamento creado
+                await supabaseClient
+                    .from('departamentos')
+                    .delete()
+                    .eq('id', newDepartment.id);
+                
+                throw new Error('Error asignando responsable: ' + assignError.message);
+            }
+        }
+
+        return { success: true, department: newDepartment };
+    } catch (error) {
+        console.error('Error creando departamento con responsable:', error);
+        return { success: false, error: error.message };
+    }
+};
+
+/**
  * Cierra la sesión del usuario actual
  * @returns {Promise<void>}
  */

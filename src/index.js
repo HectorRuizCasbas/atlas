@@ -3,7 +3,7 @@
 // Importar todas las funciones de los módulos.
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal, hideEditDepartmentModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
-import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser, hasActiveSession } from './api/supabase.js';
+import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser, hasActiveSession, getAvailableResponsibleUsers, createDepartmentWithResponsible } from './api/supabase.js';
 import { initializeTaskManagement } from './ui/tasks.js';
 import { initializeUserManagement, showUserManagementScreen } from './ui/user-management.js';
 import { initializeDepartmentManagement, showDepartmentManagementScreen } from './ui/department-management.js';
@@ -366,6 +366,145 @@ document.addEventListener('DOMContentLoaded', () => {
     // El event listener de logout se configura dinámicamente en setupHamburgerEventListeners
 
     // Los event listeners de navegación se configuran dinámicamente en setupHamburgerEventListeners
+
+    // Función para cargar usuarios responsables disponibles
+    const loadAvailableResponsibleUsers = async () => {
+        try {
+            console.log('Cargando usuarios responsables disponibles...');
+            const users = await getAvailableResponsibleUsers();
+            console.log('Usuarios responsables obtenidos:', users);
+            
+            const responsibleSelect = document.getElementById('new-department-responsible');
+            
+            if (responsibleSelect) {
+                // Limpiar opciones existentes excepto la primera
+                responsibleSelect.innerHTML = '<option value="">Seleccionar responsable...</option>';
+                
+                // Agregar usuarios disponibles
+                if (users && users.length > 0) {
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = `${user.full_name} (${user.username})`;
+                        if (user.departamentos && user.departamentos.nombre) {
+                            option.textContent += ` - Actual: ${user.departamentos.nombre}`;
+                        }
+                        responsibleSelect.appendChild(option);
+                        console.log(`Usuario responsable agregado: ${user.full_name}`);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No hay usuarios responsables disponibles';
+                    option.disabled = true;
+                    responsibleSelect.appendChild(option);
+                    console.log('No se encontraron usuarios responsables disponibles');
+                }
+            } else {
+                console.error('No se encontró el elemento select de responsables');
+            }
+        } catch (error) {
+            console.error('Error cargando usuarios responsables:', error);
+        }
+    };
+
+    // Función para mostrar el modal de nuevo departamento
+    const showNewDepartmentModal = async () => {
+        const modal = document.getElementById('new-department-modal');
+        if (modal) {
+            await loadAvailableResponsibleUsers();
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+        }
+    };
+
+    // Función para ocultar el modal de nuevo departamento
+    const hideNewDepartmentModal = () => {
+        const modal = document.getElementById('new-department-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            
+            // Limpiar formulario
+            const form = document.getElementById('new-department-form');
+            if (form) {
+                form.reset();
+            }
+        }
+    };
+
+    // Función para manejar la creación de departamento
+    const handleCreateDepartment = async (event) => {
+        event.preventDefault();
+        
+        const nameInput = document.getElementById('new-department-name');
+        const descriptionInput = document.getElementById('new-department-description');
+        const responsibleSelect = document.getElementById('new-department-responsible');
+        
+        const name = nameInput.value.trim();
+        const description = descriptionInput.value.trim();
+        const responsibleId = responsibleSelect.value;
+        
+        // Validación básica
+        if (!name) {
+            alert('El nombre del departamento es obligatorio');
+            return;
+        }
+        
+        if (!responsibleId) {
+            alert('Debe seleccionar un responsable para el departamento');
+            return;
+        }
+        
+        try {
+            console.log('Creando departamento:', { name, description, responsibleId });
+            
+            const result = await createDepartmentWithResponsible({
+                nombre: name,
+                descripcion: description,
+                responsable_id: responsibleId
+            });
+            
+            if (result.success) {
+                console.log('Departamento creado exitosamente:', result.department);
+                hideNewDepartmentModal();
+                
+                // Mostrar mensaje de éxito
+                alert('Departamento creado exitosamente');
+                
+                // Recargar la pantalla de departamentos si estamos en ella
+                if (currentScreen === 'departments') {
+                    showDepartmentManagementScreen();
+                }
+            } else {
+                console.error('Error creando departamento:', result.error);
+                alert('Error creando departamento: ' + result.error);
+            }
+        } catch (error) {
+            console.error('Error en la creación del departamento:', error);
+            alert('Error inesperado: ' + error.message);
+        }
+    };
+
+    // Event listener para el botón de nuevo departamento
+    document.addEventListener('click', (event) => {
+        if (event.target.id === 'btn-new-department') {
+            showNewDepartmentModal();
+        }
+    });
+
+    // Event listeners para el modal de nuevo departamento
+    const newDepartmentForm = document.getElementById('new-department-form');
+    if (newDepartmentForm) {
+        newDepartmentForm.addEventListener('submit', handleCreateDepartment);
+    }
+
+    // Event listener para cerrar el modal de nuevo departamento
+    document.addEventListener('click', (event) => {
+        if (event.target.getAttribute('data-modal-close') === 'new-department-modal') {
+            hideNewDepartmentModal();
+        }
+    });
 
     // Inicializar la aplicación
     initializeApp();

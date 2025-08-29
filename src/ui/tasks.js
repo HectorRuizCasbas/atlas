@@ -76,7 +76,8 @@ export const getTaskFormData = () => {
         titulo: document.getElementById('new-title')?.value || '',
         descripcion: document.getElementById('new-desc')?.value || '',
         prioridad: document.getElementById('new-priority')?.value || 'Media',
-        asignado_a: document.getElementById('new-assigned-to')?.value || '',
+        departamento: document.getElementById('new-department')?.value || null,
+        assigned_to: document.getElementById('new-assigned-to')?.value || null,
         privada: document.getElementById('new-private')?.checked || false
     };
 };
@@ -84,18 +85,19 @@ export const getTaskFormData = () => {
 /**
  * Limpia el formulario de nueva tarea
  */
-export const clearTaskForm = () => {
+export const clearTaskForm = async () => {
     const titleInput = document.getElementById('new-title');
     const descInput = document.getElementById('new-desc');
     const prioritySelect = document.getElementById('new-priority');
-    const assignedSelect = document.getElementById('new-assigned-to');
     const privateCheckbox = document.getElementById('new-private');
 
     if (titleInput) titleInput.value = '';
     if (descInput) descInput.value = '';
     if (prioritySelect) prioritySelect.selectedIndex = 2; // Media por defecto
-    if (assignedSelect) assignedSelect.selectedIndex = 0;
     if (privateCheckbox) privateCheckbox.checked = false;
+    
+    // Recargar departamentos y usuarios para resetear a valores por defecto
+    await loadDepartmentsDropdown();
 };
 
 /**
@@ -131,7 +133,8 @@ export const handleCreateTask = async (event) => {
             showToast('Tarea creada correctamente', 'success');
             clearTaskForm();
             
-            // Aquí podrías agregar lógica para actualizar la lista de tareas
+            // Actualizar la lista de tareas para mostrar la nueva tarea
+            await loadTasks();
             // refreshTaskList();
         } else {
             throw new Error(result.error || 'Error desconocido al crear la tarea');
@@ -194,6 +197,225 @@ export const loadAssignedUsersDropdown = async () => {
 };
 
 /**
+ * Carga los departamentos disponibles según el rol del usuario
+ */
+export const loadDepartmentsDropdown = async () => {
+    try {
+        const departmentSelect = document.getElementById('new-department');
+        if (!departmentSelect) return;
+
+        const currentProfile = await getCurrentUserProfile();
+        const departments = await getDepartments();
+
+        // Limpiar opciones existentes
+        departmentSelect.innerHTML = '';
+
+        // Agregar opción "Sin departamento"
+        const noDeptOption = document.createElement('option');
+        noDeptOption.value = '';
+        noDeptOption.textContent = 'Sin departamento';
+        departmentSelect.appendChild(noDeptOption);
+
+        // Lógica según el rol del usuario
+        if (currentProfile.role === 'Administrador') {
+            // Administradores pueden elegir cualquier departamento
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.nombre;
+                departmentSelect.appendChild(option);
+            });
+        } else if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
+            // Coordinadores y Responsables pueden elegir su departamento y otros
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.nombre;
+                if (dept.id === currentProfile.departamento_id) {
+                    option.selected = true;
+                }
+                departmentSelect.appendChild(option);
+            });
+        } else if (currentProfile.role === 'Usuario' && currentProfile.departamento_id) {
+            // Usuarios estándar solo pueden elegir su departamento (bloqueado)
+            const userDept = departments.find(d => d.id === currentProfile.departamento_id);
+            if (userDept) {
+                const option = document.createElement('option');
+                option.value = userDept.id;
+                option.textContent = userDept.nombre;
+                option.selected = true;
+                departmentSelect.appendChild(option);
+                departmentSelect.disabled = true;
+                departmentSelect.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            // Usuarios sin departamento - solo "Sin departamento" (bloqueado)
+            departmentSelect.disabled = true;
+            departmentSelect.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        // Configurar el dropdown de usuarios basado en el departamento seleccionado
+        await updateAssignedUsersBasedOnDepartment();
+
+    } catch (error) {
+        console.error('Error cargando departamentos:', error);
+        showToast('Error cargando lista de departamentos', 'error');
+    }
+};
+
+/**
+ * Actualiza el dropdown de usuarios asignados basado en el departamento seleccionado
+ */
+export const updateAssignedUsersBasedOnDepartment = async () => {
+    try {
+        const departmentSelect = document.getElementById('new-department');
+        const assignedSelect = document.getElementById('new-assigned-to');
+        if (!departmentSelect || !assignedSelect) return;
+
+        const selectedDepartmentId = departmentSelect.value;
+        const currentProfile = await getCurrentUserProfile();
+
+        // Limpiar opciones existentes
+        assignedSelect.innerHTML = '';
+
+        // Agregar opción "Sin usuario asignado"
+        const noUserOption = document.createElement('option');
+        noUserOption.value = '';
+        noUserOption.textContent = 'Sin usuario asignado';
+        assignedSelect.appendChild(noUserOption);
+
+        if (currentProfile.role === 'Usuario' && !currentProfile.departamento_id) {
+            // Usuarios sin departamento - solo pueden asignarse a sí mismos (bloqueado)
+            const currentOption = document.createElement('option');
+            currentOption.value = currentProfile.id;
+            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+            currentOption.selected = true;
+            assignedSelect.appendChild(currentOption);
+            assignedSelect.disabled = true;
+            assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+        } else if (currentProfile.role === 'Usuario' && currentProfile.departamento_id) {
+            // Usuarios estándar - solo pueden asignarse a sí mismos (bloqueado)
+            const currentOption = document.createElement('option');
+            currentOption.value = currentProfile.id;
+            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+            currentOption.selected = true;
+            assignedSelect.appendChild(currentOption);
+            assignedSelect.disabled = true;
+            assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+        } else if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
+            if (selectedDepartmentId === currentProfile.departamento_id) {
+                // En su propio departamento - pueden elegir usuarios del departamento
+                const users = await getSupervisedUsers();
+                
+                // Agregar usuario actual
+                const currentOption = document.createElement('option');
+                currentOption.value = currentProfile.id;
+                currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+                assignedSelect.appendChild(currentOption);
+
+                // Agregar usuarios del departamento
+                users.forEach(user => {
+                    if (user.departamento_id === selectedDepartmentId) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name || user.username;
+                        assignedSelect.appendChild(option);
+                    }
+                });
+            } else if (selectedDepartmentId && selectedDepartmentId !== currentProfile.departamento_id) {
+                // Departamento diferente - sin usuarios disponibles
+                assignedSelect.style.display = 'none';
+                assignedSelect.previousElementSibling.style.display = 'none'; // Ocultar label también
+            } else {
+                // Sin departamento seleccionado
+                assignedSelect.style.display = 'block';
+                assignedSelect.previousElementSibling.style.display = 'block';
+            }
+        } else if (currentProfile.role === 'Administrador') {
+            if (selectedDepartmentId) {
+                // Cargar usuarios del departamento seleccionado
+                const users = await getSupervisedUsers();
+                users.forEach(user => {
+                    if (user.departamento_id === selectedDepartmentId) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name || user.username;
+                        assignedSelect.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        // Actualizar lógica del checkbox privado
+        updatePrivateCheckboxLogic();
+
+    } catch (error) {
+        console.error('Error actualizando usuarios asignados:', error);
+    }
+};
+
+/**
+ * Actualiza la lógica del checkbox de tarea privada
+ */
+export const updatePrivateCheckboxLogic = async () => {
+    try {
+        const privateCheckbox = document.getElementById('new-private');
+        const departmentSelect = document.getElementById('new-department');
+        const assignedSelect = document.getElementById('new-assigned-to');
+        if (!privateCheckbox || !departmentSelect || !assignedSelect) return;
+
+        const currentProfile = await getCurrentUserProfile();
+        const selectedDepartmentId = departmentSelect.value;
+        const selectedUserId = assignedSelect.value;
+
+        // Reset checkbox state
+        privateCheckbox.disabled = false;
+        privateCheckbox.checked = false;
+        privateCheckbox.parentElement.classList.remove('opacity-50');
+
+        if (currentProfile.role === 'Usuario' && !currentProfile.departamento_id) {
+            // Usuarios sin departamento - siempre privado y bloqueado
+            privateCheckbox.checked = true;
+            privateCheckbox.disabled = true;
+            privateCheckbox.parentElement.classList.add('opacity-50');
+        } else {
+            // Para otros roles - solo puede ser privada si:
+            // 1. El departamento seleccionado es el del usuario actual (o sin departamento)
+            // 2. El usuario asignado es el usuario actual
+            const canBePrivate = (
+                (selectedDepartmentId === currentProfile.departamento_id || selectedDepartmentId === '') &&
+                selectedUserId === currentProfile.id
+            );
+
+            if (!canBePrivate) {
+                privateCheckbox.checked = false;
+                privateCheckbox.disabled = true;
+                privateCheckbox.parentElement.classList.add('opacity-50');
+            }
+        }
+
+    } catch (error) {
+        console.error('Error actualizando lógica de checkbox privado:', error);
+    }
+};
+
+/**
+ * Configura los event listeners para el formulario de creación de tareas
+ */
+export const setupTaskFormEventListeners = () => {
+    const departmentSelect = document.getElementById('new-department');
+    const assignedSelect = document.getElementById('new-assigned-to');
+    
+    if (departmentSelect) {
+        departmentSelect.addEventListener('change', updateAssignedUsersBasedOnDepartment);
+    }
+    
+    if (assignedSelect) {
+        assignedSelect.addEventListener('change', updatePrivateCheckboxLogic);
+    }
+};
+
+/**
  * Inicializa los event listeners para la gestión de tareas
  */
 export const initializeTaskManagement = async () => {
@@ -203,8 +425,11 @@ export const initializeTaskManagement = async () => {
         createBtn.addEventListener('click', handleCreateTask);
     }
     
-    // Cargar usuarios asignados
-    await loadAssignedUsersDropdown();
+    // Cargar departamentos y configurar formulario
+    await loadDepartmentsDropdown();
+    
+    // Configurar event listeners del formulario
+    setupTaskFormEventListeners();
     
     // Precarga de filtros y establecer valores por defecto
     await preloadFilters();

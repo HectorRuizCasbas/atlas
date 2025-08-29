@@ -8,6 +8,37 @@ import { initializeTaskManagement } from './ui/tasks.js';
 import { initializeUserManagement, showUserManagementScreen } from './ui/user-management.js';
 import { initializeDepartmentManagement, showDepartmentManagementScreen } from './ui/department-management.js';
 
+
+// Función para adjuntar los event listeners de navegación a los botones del menú.
+function attachNavigationEventListeners() {
+    const navigateTasksBtn = document.getElementById('btn-navigate-tasks');
+    if (navigateTasksBtn) {
+        navigateTasksBtn.addEventListener('click', () => {
+            showMainScreen(); // Esta función está en user-management.js
+        });
+    }
+
+    const navigateDepartmentsBtn = document.getElementById('btn-navigate-departments');
+    if (navigateDepartmentsBtn) {
+        navigateDepartmentsBtn.addEventListener('click', () => {
+            showDepartmentManagementScreen(); // Esta función está en department-management.js
+        });
+    }
+
+    const navigateUsersBtn = document.getElementById('btn-navigate-users');
+    if (navigateUsersBtn) {
+        navigateUsersBtn.addEventListener('click', () => {
+            showUserManagementScreen(); // Esta función está en user-management.js
+        });
+    }
+
+    // Event listener para logout
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+}
+
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
     // Elementos del formulario de registro
@@ -29,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginErrorMessage = document.getElementById('login-error-message');
     const loginScreen = document.getElementById('screen-login');
     const mainScreen = document.getElementById('screen-main');
-
+attachNavigationEventListeners();
     const handleRegisterSubmit = async (event) => {
         event.preventDefault(); // Prevenir el envío por defecto del formulario
         

@@ -39,7 +39,7 @@ async function loadDepartmentManagementData() {
         await loadUsers();
         await loadDepartments();
         console.log('Datos cargados, renderizando tabla...');
-        renderDepartmentsTable();
+        await renderDepartmentsTable();
     } catch (error) {
         console.error('Error cargando datos de gestión de departamentos:', error);
         showToast(`Error cargando datos de departamentos: ${error.message}`, 'error');
@@ -85,7 +85,7 @@ async function loadUsers() {
 }
 
 // Función para renderizar la tabla de departamentos
-function renderDepartmentsTable() {
+async function renderDepartmentsTable() {
     const tableBody = document.getElementById('departments-table-body');
     if (!tableBody) {
         console.error('No se encontró el elemento departments-table-body');
@@ -107,14 +107,14 @@ function renderDepartmentsTable() {
     }
 
     // Renderizar cada departamento
-    currentDepartments.forEach(department => {
-        const row = createDepartmentRow(department);
+    for (const department of currentDepartments) {
+        const row = await createDepartmentRow(department);
         tableBody.appendChild(row);
-    });
+    }
 }
 
 // Función para crear una fila de departamento
-function createDepartmentRow(department) {
+async function createDepartmentRow(department) {
     const row = document.createElement('tr');
     row.className = 'border-b border-gray-700 hover:bg-gray-700';
 
@@ -124,6 +124,20 @@ function createDepartmentRow(department) {
     const responsableCount = departmentUsers.filter(user => user.role === 'Responsable').length;
     const coordinadorCount = departmentUsers.filter(user => user.role === 'Coordinador').length;
     const usuarioCount = departmentUsers.filter(user => user.role === 'Usuario').length;
+
+    // Obtener el perfil del usuario actual para verificar permisos
+    const currentProfile = await getCurrentUserProfile();
+    const canDelete = currentProfile.role === 'Administrador';
+
+    const deleteButtonHtml = canDelete ? `
+        <button 
+            onclick="deleteDepartment('${department.id}')"
+            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
+            ${departmentUsers.length > 0 ? 'disabled title="No se puede eliminar un departamento con usuarios"' : ''}
+        >
+            Eliminar
+        </button>
+    ` : '';
 
     row.innerHTML = `
         <td class="px-6 py-4 font-medium text-white">
@@ -148,13 +162,7 @@ function createDepartmentRow(department) {
                 >
                     Editar
                 </button>
-                <button 
-                    onclick="deleteDepartment('${department.id}')"
-                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition-colors"
-                    ${departmentUsers.length > 0 ? 'disabled title="No se puede eliminar un departamento con usuarios"' : ''}
-                >
-                    Eliminar
-                </button>
+                ${deleteButtonHtml}
             </div>
         </td>
     `;
@@ -456,7 +464,6 @@ export function initializeDepartmentManagement() {
         });
     }
 
-
     // Event listeners para formularios
     const newDepartmentForm = document.getElementById('new-department-form');
     const editDepartmentForm = document.getElementById('edit-department-form');
@@ -465,8 +472,52 @@ export function initializeDepartmentManagement() {
         newDepartmentForm.addEventListener('submit', handleCreateDepartment);
     }
     
+    // Inicializar menú hamburguesa
+    initializeHamburgerMenu();
 
     console.log('Gestión de departamentos inicializada');
+}
+
+// Función para inicializar el menú hamburguesa
+function initializeHamburgerMenu() {
+    const hamburgerButton = document.getElementById('hamburger-button-department-management');
+    const hamburgerDropdown = document.getElementById('hamburger-dropdown-department-management');
+    
+    if (hamburgerButton && hamburgerDropdown) {
+        // Toggle dropdown al hacer clic en el botón
+        hamburgerButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hamburgerDropdown.classList.toggle('show');
+        });
+        
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!hamburgerButton.contains(e.target) && !hamburgerDropdown.contains(e.target)) {
+                hamburgerDropdown.classList.remove('show');
+            }
+        });
+    }
+    
+    // Event listeners para los elementos del menú
+    const backToMainBtn = document.getElementById('btn-back-to-main-from-departments');
+    if (backToMainBtn) {
+        backToMainBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
+            showMainScreen();
+        });
+    }
+    
+    const userManagementBtn = document.getElementById('btn-user-management-from-departments');
+    if (userManagementBtn) {
+        userManagementBtn.addEventListener('click', () => {
+            hamburgerDropdown.classList.remove('show');
+            // Aquí se podría agregar navegación a gestión de usuarios si es necesario
+            console.log('Navegar a gestión de usuarios desde departamentos');
+        });
+    }
+    
+    // Los demás botones del menú (cambiar contraseña, eliminar cuenta, ayuda, logout)
+    // se manejarán desde el archivo principal index.js
 }
 
 // Función para guardar cambios del departamento

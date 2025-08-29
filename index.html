@@ -1188,9 +1188,20 @@
                         <h1 class="text-3xl font-bold text-emerald-300">Gestión de Departamentos</h1>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <span id="current-user-department-management" class="text-slate-300"></span>
-                        <div class="hamburger-menu relative">
-                            <button id="hamburger-button-department-management" class="text-slate-300 hover:text-white focus:outline-none">
+                        <span class="text-slate-300">Usuario: <span id="current-user-department-management" class="font-semibold text-indigo-400 cursor-pointer hover:text-indigo-300 transition-colors"></span></span>
+                        <div id="notifications-indicator-department-management" class="flex items-center gap-1 text-amber-400 hidden">
+                            <div class="flex items-center justify-center w-4 h-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/>
+                                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                                </svg>
+                            </div>
+                            <span id="total-notifications-count-department-management" class="text-sm font-semibold">0</span>
+                        </div>
+                        
+                        <!-- Menú hamburguesa -->
+                        <div class="hamburger-menu">
+                            <button id="hamburger-button-department-management" class="hamburger-button">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="3" y1="6" x2="21" y2="6"></line>
                                     <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -1198,7 +1209,24 @@
                                 </svg>
                             </button>
                             <div id="hamburger-dropdown-department-management" class="hamburger-dropdown">
-                                <button id="btn-logout-department-management" class="hamburger-item">Cerrar Sesión</button>
+                                <button id="btn-user-management-from-departments" class="hamburger-item hidden">
+                                    Configurar Usuarios
+                                </button>
+                                <button id="btn-back-to-main-from-departments" class="hamburger-item">
+                                    Volver a Tareas
+                                </button>
+                                <button id="btn-change-password-department-management" class="hamburger-item">
+                                    Cambiar Contraseña
+                                </button>
+                                <button id="btn-delete-own-account-department-management" class="hamburger-item">
+                                    Eliminar Mi Cuenta
+                                </button>
+                                <button id="btn-help-department-management" class="hamburger-item help-item">
+                                    Ayuda
+                                </button>
+                                <button id="btn-logout-department-management" class="hamburger-item">
+                                    Cerrar Sesión
+                                </button>
                             </div>
                         </div>
                     </div>

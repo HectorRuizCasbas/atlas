@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const profile = await getCurrentUserProfile();
             
             // Actualizar elementos de la interfaz con información del usuario
-            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management');
+            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management, #current-user-department-management');
             currentUserElements.forEach(element => {
                 if (element) {
                     element.textContent = profile.full_name || profile.username;
@@ -448,6 +448,10 @@ function initializeHamburgerMenus() {
     const hamburgerButtonUserManagement = document.getElementById('hamburger-button-user-management');
     const hamburgerDropdownUserManagement = document.getElementById('hamburger-dropdown-user-management');
     
+    // Menú hamburguesa de gestión de departamentos
+    const hamburgerButtonDepartmentManagement = document.getElementById('hamburger-button-department-management');
+    const hamburgerDropdownDepartmentManagement = document.getElementById('hamburger-dropdown-department-management');
+    
     // Función para cerrar todos los menús
     function closeAllMenus() {
         if (hamburgerDropdown) {
@@ -455,6 +459,9 @@ function initializeHamburgerMenus() {
         }
         if (hamburgerDropdownUserManagement) {
             hamburgerDropdownUserManagement.classList.remove('show');
+        }
+        if (hamburgerDropdownDepartmentManagement) {
+            hamburgerDropdownDepartmentManagement.classList.remove('show');
         }
     }
     
@@ -465,6 +472,9 @@ function initializeHamburgerMenus() {
             // Cerrar otros menús
             if (hamburgerDropdownUserManagement) {
                 hamburgerDropdownUserManagement.classList.remove('show');
+            }
+            if (hamburgerDropdownDepartmentManagement) {
+                hamburgerDropdownDepartmentManagement.classList.remove('show');
             }
             // Toggle del menú actual
             hamburgerDropdown.classList.toggle('show');
@@ -479,8 +489,27 @@ function initializeHamburgerMenus() {
             if (hamburgerDropdown) {
                 hamburgerDropdown.classList.remove('show');
             }
+            if (hamburgerDropdownDepartmentManagement) {
+                hamburgerDropdownDepartmentManagement.classList.remove('show');
+            }
             // Toggle del menú actual
             hamburgerDropdownUserManagement.classList.toggle('show');
+        });
+    }
+    
+    // Event listener para el menú de gestión de departamentos
+    if (hamburgerButtonDepartmentManagement && hamburgerDropdownDepartmentManagement) {
+        hamburgerButtonDepartmentManagement.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Cerrar otros menús
+            if (hamburgerDropdown) {
+                hamburgerDropdown.classList.remove('show');
+            }
+            if (hamburgerDropdownUserManagement) {
+                hamburgerDropdownUserManagement.classList.remove('show');
+            }
+            // Toggle del menú actual
+            hamburgerDropdownDepartmentManagement.classList.toggle('show');
         });
     }
     

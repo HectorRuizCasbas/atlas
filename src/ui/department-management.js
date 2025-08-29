@@ -2,7 +2,6 @@
 
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment, getVisibleUsers, getCurrentUserProfile, updateUserRole } from '../api/supabase.js';
 import { showToast } from './tasks.js';
-import { initializeUserSession } from './menu.js';
 
 let currentDepartments = [];
 let currentUsers = [];
@@ -16,9 +15,6 @@ export async function showDepartmentManagementScreen() {
         mainScreen.classList.add('hidden');
         departmentManagementScreen.classList.remove('hidden');
         
-        // Inicializar la interfaz de usuario para esta pantalla, incluyendo el menú.
-        await initializeUserSession('screen-department-management'); // <--- AÑADE ESTA LÍNEA
-        
         // Configurar permisos de UI según el rol del usuario
         await setupDepartmentManagementPermissions();
         
@@ -26,6 +22,7 @@ export async function showDepartmentManagementScreen() {
         loadDepartmentManagementData();
     }
 }
+
 // Función para configurar permisos de UI según el rol del usuario
 async function setupDepartmentManagementPermissions() {
     try {

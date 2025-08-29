@@ -8,37 +8,6 @@ import { initializeTaskManagement } from './ui/tasks.js';
 import { initializeUserManagement, showUserManagementScreen } from './ui/user-management.js';
 import { initializeDepartmentManagement, showDepartmentManagementScreen } from './ui/department-management.js';
 
-
-// Función para adjuntar los event listeners de navegación a los botones del menú.
-function attachNavigationEventListeners() {
-    const navigateTasksBtn = document.getElementById('btn-navigate-tasks');
-    if (navigateTasksBtn) {
-        navigateTasksBtn.addEventListener('click', () => {
-            showMainScreen(); // Esta función está en user-management.js
-        });
-    }
-
-    const navigateDepartmentsBtn = document.getElementById('btn-navigate-departments');
-    if (navigateDepartmentsBtn) {
-        navigateDepartmentsBtn.addEventListener('click', () => {
-            showDepartmentManagementScreen(); // Esta función está en department-management.js
-        });
-    }
-
-    const navigateUsersBtn = document.getElementById('btn-navigate-users');
-    if (navigateUsersBtn) {
-        navigateUsersBtn.addEventListener('click', () => {
-            showUserManagementScreen(); // Esta función está en user-management.js
-        });
-    }
-
-    // Event listener para logout
-    const logoutBtn = document.getElementById('btn-logout');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-}
-
 // Adjuntar event listeners.
 document.addEventListener('DOMContentLoaded', () => {
     // Elementos del formulario de registro
@@ -60,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginErrorMessage = document.getElementById('login-error-message');
     const loginScreen = document.getElementById('screen-login');
     const mainScreen = document.getElementById('screen-main');
-attachNavigationEventListeners();
+
     const handleRegisterSubmit = async (event) => {
         event.preventDefault(); // Prevenir el envío por defecto del formulario
         
@@ -140,7 +109,51 @@ attachNavigationEventListeners();
             hideEditDepartmentModal();
         });
     }
-// Función para manejar el login
+
+    // Función para inicializar la sesión del usuario
+    const initializeUserSession = async () => {
+        try {
+            const profile = await getCurrentUserProfile();
+            
+            // Actualizar elementos de la interfaz con información del usuario
+            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management, #current-user-department-management');
+            currentUserElements.forEach(element => {
+                if (element) {
+                    element.textContent = profile.full_name || profile.username;
+                }
+            });
+            
+            // Actualizar última actividad
+            await updateLastActivity();
+            
+            // Mostrar/ocultar opciones según el rol
+            const userManagementBtn = document.getElementById('btn-user-management');
+            const departmentManagementBtn = document.getElementById('btn-department-management');
+            
+            if (userManagementBtn) {
+                if (profile.role === 'Administrador') {
+                    userManagementBtn.classList.remove('hidden');
+                } else {
+                    userManagementBtn.classList.add('hidden');
+                }
+            }
+            
+            if (departmentManagementBtn) {
+                if (profile.role === 'Administrador' || profile.role === 'Responsable') {
+                    departmentManagementBtn.classList.remove('hidden');
+                } else {
+                    departmentManagementBtn.classList.add('hidden');
+                }
+            }
+            
+            console.log('Sesión inicializada para:', profile);
+            
+        } catch (error) {
+            console.error('Error inicializando sesión:', error);
+        }
+    };
+
+    // Función para manejar el login
     const handleLogin = async (event) => {
         event.preventDefault();
         
@@ -173,9 +186,13 @@ attachNavigationEventListeners();
             
             if (result.success) {
                 console.log('Login exitoso:', result.user);
-		await initializeUserSession('screen-main');
-                document.getElementById('login-screen').classList.add('hidden');
-       		document.getElementById('screen-main').classList.remove('hidden');
+                
+                // Obtener y mostrar información del usuario
+                await initializeUserSession();
+                
+                // Redirigir a la página principal
+                loginScreen.classList.add('hidden');
+                mainScreen.classList.remove('hidden');
                 
                 // Inicializar módulos que requieren sesión
                 initializeTaskManagement();
@@ -623,4 +640,35 @@ async function initializeHamburgerMenus() {
             }
         }
     });
+}
+
+// Función para configurar permisos de menús según el rol del usuario
+async function setupMenuPermissions() {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        if (!currentProfile) return;
+        
+        const userRole = currentProfile.role;
+        
+        const departmentsBtn = document.getElementById('btn-navigate-departments');
+        const usersBtn = document.getElementById('btn-navigate-users');
+        
+        // Configurar visibilidad según el rol
+        if (userRole === 'Administrador') {
+            // Administrador puede ver todo
+            if (departmentsBtn) departmentsBtn.classList.remove('hidden');
+            if (usersBtn) usersBtn.classList.remove('hidden');
+        } else if (userRole === 'Responsable') {
+            // Responsable puede ver departamentos pero no usuarios
+            if (departmentsBtn) departmentsBtn.classList.remove('hidden');
+            if (usersBtn) usersBtn.classList.add('hidden');
+        } else {
+            // Coordinador y Usuario no pueden ver departamentos ni usuarios
+            if (departmentsBtn) departmentsBtn.classList.add('hidden');
+            if (usersBtn) usersBtn.classList.add('hidden');
+        }
+        
+    } catch (error) {
+        console.error('Error configurando permisos de menú:', error);
+    }
 }

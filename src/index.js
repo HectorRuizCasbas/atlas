@@ -540,6 +540,9 @@ async function initializeApp() {
             if (toggleViewBtn) {
                 toggleViewBtn.addEventListener('click', toggleViewMode);
             }
+            
+            // Inicializar menús hamburguesa con sesión activa
+            await initializeHamburgerMenus();
         } else {
             console.log('No hay sesión activa, mostrando pantalla de login');
             
@@ -550,10 +553,11 @@ async function initializeApp() {
                 mainScreen.classList.add('hidden');
                 loginScreen.classList.remove('hidden');
             }
+            // Inicializar menús hamburguesa básicos sin permisos
+            initializeBasicHamburgerMenus();
         }
         
-        // Inicializar menús hamburguesa (no requieren sesión)
-        initializeHamburgerMenus();
+        // No inicializar menús aquí - se hace según el estado de sesión
         
     } catch (error) {
         console.error('Error inicializando aplicación:', error);
@@ -566,8 +570,8 @@ async function initializeApp() {
             loginScreen.classList.remove('hidden');
         }
         
-        // Inicializar menú hamburguesa unificado
-        await initializeHamburgerMenus();
+        // Inicializar menú hamburguesa básico sin permisos
+        initializeBasicHamburgerMenus();
         
         // Establecer pantalla inicial
         currentScreen = 'tasks';
@@ -809,7 +813,34 @@ function setupHamburgerEventListeners() {
     }
 }
 
-// Función para inicializar el menú hamburguesa unificado
+// Función para inicializar menús hamburguesa básicos (sin permisos)
+function initializeBasicHamburgerMenus() {
+    // Insertar menú en la pantalla inicial (tasks)
+    insertHamburgerMenu('tasks');
+    
+    // Ocultar botones de navegación por defecto
+    const departmentsBtn = document.getElementById('btn-navigate-departments');
+    const usersBtn = document.getElementById('btn-navigate-users');
+    if (departmentsBtn) departmentsBtn.classList.add('hidden');
+    if (usersBtn) usersBtn.classList.add('hidden');
+    
+    // Actualizar menú inicial
+    updateHamburgerMenu();
+    
+    // Cerrar menú al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        const hamburgerDropdown = document.getElementById('hamburger-dropdown');
+        const hamburgerButton = document.getElementById('hamburger-button');
+        
+        if (hamburgerDropdown && hamburgerButton && 
+            !hamburgerDropdown.contains(e.target) && 
+            !hamburgerButton.contains(e.target)) {
+            hamburgerDropdown.classList.remove('show');
+        }
+    });
+}
+
+// Función para inicializar el menú hamburguesa unificado (con permisos)
 async function initializeHamburgerMenus() {
     // Insertar menú en la pantalla inicial (tasks)
     insertHamburgerMenu('tasks');
@@ -907,10 +938,7 @@ function clearUIState() {
     });
     
     // Limpiar permisos de menú hamburguesa - ocultar todos los botones de navegación
-    const departmentsBtn = document.getElementById('btn-navigate-departments');
-    const usersBtn = document.getElementById('btn-navigate-users');
-    if (departmentsBtn) departmentsBtn.classList.add('hidden');
-    if (usersBtn) usersBtn.classList.add('hidden');
+    // NOTA: No ocultar aquí, se configurarán en setupMenuPermissions según el rol
 }
 
 // Función global para manejar logout (accesible desde cualquier contexto)
@@ -921,6 +949,12 @@ async function handleGlobalLogout() {
         
         // Limpiar estado de la UI
         clearUIState();
+        
+        // Ocultar botones de navegación específicamente en logout
+        const departmentsBtn = document.getElementById('btn-navigate-departments');
+        const usersBtn = document.getElementById('btn-navigate-users');
+        if (departmentsBtn) departmentsBtn.classList.add('hidden');
+        if (usersBtn) usersBtn.classList.add('hidden');
         
         // Limpiar formulario de login
         const usernameInput = document.getElementById('username');

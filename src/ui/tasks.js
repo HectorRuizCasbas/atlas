@@ -827,7 +827,14 @@ export const loadTasks = async () => {
             return;
         }
 
-        const tasks = await getUserTasks();
+        // Obtener filtros actuales
+        const filters = getCurrentFilters();
+        const tasks = await getUserTasks(filters.state, {
+            priority: filters.priority,
+            assigned_to: filters.assigned_to,
+            text: filters.text,
+            department: filters.department
+        });
         
         // Almacenar las tareas globalmente para el cambio de vista
         window.currentTasks = tasks;
@@ -841,7 +848,36 @@ export const loadTasks = async () => {
     } catch (error) {
         console.error('Error cargando tareas:', error);
         showToast('Error cargando las tareas', 'error');
+        
+        // Limpiar tareas en caso de error
+        window.currentTasks = [];
+        
+        // Limpiar la vista de tareas
+        const tasksList = document.getElementById('tasks-list');
+        const tasksGrid = document.getElementById('tasks-grid');
+        if (tasksList) tasksList.innerHTML = '<div class="text-center text-slate-400 py-8">Error al cargar las tareas</div>';
+        if (tasksGrid) tasksGrid.innerHTML = '<div class="text-center text-slate-400 py-8">Error al cargar las tareas</div>';
     }
+};
+
+/**
+ * Obtiene los valores actuales de los filtros
+ * @returns {object} - Objeto con los valores de los filtros
+ */
+const getCurrentFilters = () => {
+    const textFilter = document.getElementById('filter-text');
+    const stateFilter = document.getElementById('filter-state');
+    const priorityFilter = document.getElementById('filter-priority');
+    const assignedFilter = document.getElementById('filter-assigned-to');
+    const departmentFilter = document.getElementById('filter-department');
+    
+    return {
+        text: textFilter?.value || '',
+        state: stateFilter?.value || 'OPEN_TASKS',
+        priority: priorityFilter?.value || '',
+        assigned_to: assignedFilter?.value || '',
+        department: departmentFilter?.value || ''
+    };
 };
 
 /**
@@ -946,6 +982,26 @@ export const preloadFilters = async () => {
         
     } catch (error) {
         console.error('Error precargando filtros:', error);
+        
+        // En caso de error, limpiar los filtros para evitar mostrar datos incorrectos
+        const assignedFilter = document.getElementById('filter-assigned-to');
+        const departmentFilter = document.getElementById('filter-department');
+        
+        if (assignedFilter) {
+            assignedFilter.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Todos';
+            assignedFilter.appendChild(defaultOption);
+        }
+        
+        if (departmentFilter) {
+            departmentFilter.innerHTML = '';
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Todos los departamentos';
+            departmentFilter.appendChild(defaultOption);
+        }
     }
 };
 

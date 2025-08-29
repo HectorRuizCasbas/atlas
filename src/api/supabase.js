@@ -1026,8 +1026,8 @@ export const updateTaskWithHistory = async (taskId, newData, changes) => {
                 descripcion: newData.descripcion,
                 estado: newData.estado,
                 prioridad: newData.prioridad,
-                departamento: newData.departamento,
-                asignado_a: newData.asignado_a,
+                departamento: newData.departamento || null,
+                asignado_a: newData.asignado_a || null,
                 privada: newData.privada,
                 updated_at: new Date().toISOString()
             })

@@ -1441,8 +1441,8 @@ const saveTaskChanges = async (originalTask) => {
             descripcion: document.getElementById('task-detail-description').value,
             estado: document.getElementById('task-detail-status').value,
             prioridad: document.getElementById('task-detail-priority').value,
-            departamento: document.getElementById('task-detail-department').value || null,
-            asignado_a: document.getElementById('task-detail-assigned').value || null,
+            departamento: document.getElementById('task-detail-department').value === '' ? null : document.getElementById('task-detail-department').value,
+            asignado_a: document.getElementById('task-detail-assigned').value === '' ? null : document.getElementById('task-detail-assigned').value,
             privada: document.getElementById('task-detail-private').checked
         };
 

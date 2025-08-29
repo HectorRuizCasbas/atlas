@@ -774,9 +774,9 @@ function setupHamburgerEventListeners() {
     // Event listener para logout
     const logoutBtn = document.getElementById('btn-logout');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => {
+        logoutBtn.addEventListener('click', async () => {
             hamburgerDropdown.classList.remove('show');
-            handleLogout();
+            await handleGlobalLogout();
         });
     }
     
@@ -905,4 +905,43 @@ function clearUIState() {
     hamburgerDropdowns.forEach(dropdown => {
         dropdown.classList.remove('show');
     });
+    
+    // Limpiar permisos de menú hamburguesa - ocultar todos los botones de navegación
+    const departmentsBtn = document.getElementById('btn-navigate-departments');
+    const usersBtn = document.getElementById('btn-navigate-users');
+    if (departmentsBtn) departmentsBtn.classList.add('hidden');
+    if (usersBtn) usersBtn.classList.add('hidden');
+}
+
+// Función global para manejar logout (accesible desde cualquier contexto)
+async function handleGlobalLogout() {
+    try {
+        // Cerrar sesión en Supabase
+        await logoutUser();
+        
+        // Limpiar estado de la UI
+        clearUIState();
+        
+        // Limpiar formulario de login
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        if (usernameInput) usernameInput.value = '';
+        if (passwordInput) passwordInput.value = '';
+        
+        // Mostrar mensaje de logout exitoso
+        const loginMessage = document.getElementById('login-message');
+        if (loginMessage) {
+            loginMessage.textContent = 'Sesión cerrada correctamente';
+            loginMessage.className = 'text-green-400 text-sm mt-2';
+            setTimeout(() => {
+                loginMessage.textContent = '';
+                loginMessage.className = '';
+            }, 3000);
+        }
+        
+        console.log('Logout exitoso');
+        
+    } catch (error) {
+        console.error('Error en logout:', error);
+    }
 }

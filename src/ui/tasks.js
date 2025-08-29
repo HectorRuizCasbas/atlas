@@ -305,6 +305,11 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
         } else if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
             if (selectedDepartmentId === currentProfile.departamento_id) {
                 // En su propio departamento - pueden elegir usuarios del departamento
+                assignedSelect.style.display = 'block';
+                assignedSelect.previousElementSibling.style.display = 'block';
+                assignedSelect.disabled = false;
+                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+                
                 const users = await getSupervisedUsers();
                 
                 // Agregar usuario actual
@@ -330,6 +335,8 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
                 // Sin departamento seleccionado
                 assignedSelect.style.display = 'block';
                 assignedSelect.previousElementSibling.style.display = 'block';
+                assignedSelect.disabled = false;
+                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
             }
         } else if (currentProfile.role === 'Administrador') {
             if (selectedDepartmentId) {

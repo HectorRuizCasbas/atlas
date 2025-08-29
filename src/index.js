@@ -326,22 +326,30 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await logoutUser();
             
-            // Redirigir a pantalla de login
+            // Redirigir a pantalla de login y ocultar todas las demás pantallas
             const loginScreen = document.getElementById('screen-login');
             const mainScreen = document.getElementById('screen-main');
             const userManagementScreen = document.getElementById('screen-user-management');
+            const departmentManagementScreen = document.getElementById('screen-department-management');
             
-            if (loginScreen && mainScreen) {
+            // Ocultar todas las pantallas excepto login
+            if (mainScreen) {
                 mainScreen.classList.add('hidden');
-                loginScreen.classList.remove('hidden');
             }
-            
             if (userManagementScreen) {
                 userManagementScreen.classList.add('hidden');
             }
+            if (departmentManagementScreen) {
+                departmentManagementScreen.classList.add('hidden');
+            }
+            
+            // Mostrar pantalla de login
+            if (loginScreen) {
+                loginScreen.classList.remove('hidden');
+            }
             
             // Limpiar información del usuario
-            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management');
+            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management, #current-user-department-management');
             currentUserElements.forEach(element => {
                 if (element) {
                     element.textContent = '';

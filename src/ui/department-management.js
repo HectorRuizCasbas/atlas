@@ -7,7 +7,7 @@ let currentDepartments = [];
 let currentUsers = [];
 
 // Función para mostrar la pantalla de gestión de departamentos
-export function showDepartmentManagementScreen() {
+export async function showDepartmentManagementScreen() {
     const mainScreen = document.getElementById('screen-main');
     const departmentManagementScreen = document.getElementById('screen-department-management');
     
@@ -15,8 +15,41 @@ export function showDepartmentManagementScreen() {
         mainScreen.classList.add('hidden');
         departmentManagementScreen.classList.remove('hidden');
         
+        // Configurar permisos de UI según el rol del usuario
+        await setupDepartmentManagementPermissions();
+        
         // Cargar datos iniciales
         loadDepartmentManagementData();
+    }
+}
+
+// Función para configurar permisos de UI según el rol del usuario
+async function setupDepartmentManagementPermissions() {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        const newDepartmentBtn = document.getElementById('btn-new-department');
+        const userManagementBtn = document.getElementById('btn-user-management-from-departments');
+        
+        // Solo administradores pueden crear nuevos departamentos
+        if (newDepartmentBtn) {
+            if (currentProfile.role === 'Administrador') {
+                newDepartmentBtn.classList.remove('hidden');
+            } else {
+                newDepartmentBtn.classList.add('hidden');
+            }
+        }
+        
+        // Solo administradores pueden acceder a gestión de usuarios desde departamentos
+        if (userManagementBtn) {
+            if (currentProfile.role === 'Administrador') {
+                userManagementBtn.classList.remove('hidden');
+            } else {
+                userManagementBtn.classList.add('hidden');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error configurando permisos de departamentos:', error);
     }
 }
 
@@ -503,6 +536,18 @@ function initializeHamburgerMenu() {
     if (backToMainBtn) {
         backToMainBtn.addEventListener('click', () => {
             hamburgerDropdown.classList.remove('show');
+            showMainScreen();
+        });
+    }
+    
+    // También manejar el botón "Tareas" del menú hamburguesa de user management
+    const backToMainFromUserListBtn = document.getElementById('btn-back-to-main-from-user-list');
+    if (backToMainFromUserListBtn) {
+        backToMainFromUserListBtn.addEventListener('click', () => {
+            const userManagementDropdown = document.getElementById('hamburger-dropdown-user-management');
+            if (userManagementDropdown) {
+                userManagementDropdown.classList.remove('show');
+            }
             showMainScreen();
         });
     }

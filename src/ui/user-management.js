@@ -381,6 +381,7 @@ export function initializeUserManagement() {
     // Event listeners para navegación
     const userManagementBtn = document.getElementById('btn-user-management');
     const backToMainBtn = document.getElementById('btn-back-to-main-from-user-list');
+    const backArrowBtn = document.getElementById('btn-back-user-management');
     
     if (userManagementBtn) {
         userManagementBtn.addEventListener('click', showUserManagementScreen);
@@ -388,6 +389,10 @@ export function initializeUserManagement() {
     
     if (backToMainBtn) {
         backToMainBtn.addEventListener('click', showMainScreen);
+    }
+    
+    if (backArrowBtn) {
+        backArrowBtn.addEventListener('click', showMainScreen);
     }
     
     // Event listener para botón de crear nuevo usuario (modal)

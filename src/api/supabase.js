@@ -157,11 +157,35 @@ export const getSupervisedUsers = async () => {
     try {
         const currentProfile = await getCurrentUserProfile();
         
-        // Solo devolver el usuario actual ya que no hay supervisedUsers
-        const { data: users, error } = await supabaseClient
+        let query = supabaseClient
             .from('profiles')
-            .select('id, username, full_name')
-            .eq('id', currentProfile.id);
+            .select(`
+                id, 
+                username, 
+                full_name, 
+                role, 
+                departamento_id,
+                departamentos!departamento_id(id, nombre)
+            `);
+
+        // Aplicar filtros según el rol del usuario
+        if (currentProfile.role === 'Administrador') {
+            // Administradores pueden ver todos los usuarios
+            query = query.order('full_name');
+        } else if (currentProfile.role === 'Responsable' || currentProfile.role === 'Coordinador') {
+            // Responsables y coordinadores ven usuarios de su departamento
+            if (currentProfile.departamento_id) {
+                query = query.eq('departamento_id', currentProfile.departamento_id).order('full_name');
+            } else {
+                // Si no tiene departamento, solo se ve a sí mismo
+                query = query.eq('id', currentProfile.id);
+            }
+        } else {
+            // Usuarios normales solo se ven a sí mismos
+            query = query.eq('id', currentProfile.id);
+        }
+
+        const { data: users, error } = await query;
 
         if (error) {
             throw new Error('Error obteniendo usuarios supervisados');
@@ -177,16 +201,13 @@ export const getSupervisedUsers = async () => {
 /**
  * Obtiene las tareas que el usuario puede ver según sus permisos
  * @param {string} filterStatus - Filtro de estado ('OPEN_TASKS' para abiertas, '' para todas, o estado específico)
- * @param {object} filters - Filtros adicionales (priority, assigned_to, text)
+ * @param {object} filters - Filtros adicionales (priority, assigned_to, text, department)
  * @returns {Promise<Array>} - Lista de tareas
  */
 export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) => {
     try {
         const currentProfile = await getCurrentUserProfile();
         
-        // Solo puede ver sus propias tareas ya que no hay supervisedUsers
-        const visibleUserIds = [currentProfile.id];
-
         let query = supabaseClient
             .from('tasks')
             .select(`
@@ -201,14 +222,40 @@ export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) =>
                 departamento,
                 created_at,
                 updated_at,
-                creator_profile:creador(id, username, full_name),
-                assigned_profile:asignado_a(id, username, full_name)
+                creator_profile:creador(id, username, full_name, departamento_id, departamentos!departamento_id(nombre)),
+                assigned_profile:asignado_a(id, username, full_name, departamento_id, departamentos!departamento_id(nombre))
             `)
-            .or(`creador.in.(${visibleUserIds.join(',')}),asignado_a.in.(${visibleUserIds.join(',')})`)
             .order('updated_at', { ascending: false });
 
-        // Filtrar tareas privadas: solo mostrar si el usuario es el creador
-        query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
+        // Aplicar visibilidad según el rol del usuario
+        if (currentProfile.role === 'Administrador') {
+            // Administradores ven todas las tareas excepto privadas de otros
+            query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
+        } else if (currentProfile.role === 'Responsable' || currentProfile.role === 'Coordinador') {
+            // Responsables y Coordinadores ven tareas de su departamento + sus propias tareas
+            if (currentProfile.departamento_id) {
+                // Obtener usuarios del departamento para filtrar tareas
+                const { data: deptUsers } = await supabaseClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('departamento_id', currentProfile.departamento_id);
+                
+                const deptUserIds = deptUsers ? deptUsers.map(u => u.id) : [];
+                deptUserIds.push(currentProfile.id); // Incluir al usuario actual
+                
+                // Tareas donde el creador o asignado pertenece al departamento (públicas) + tareas privadas propias
+                query = query.or(`and(creador.in.(${deptUserIds.join(',')}),privada.eq.false),and(asignado_a.in.(${deptUserIds.join(',')}),privada.eq.false),and(privada.eq.true,creador.eq.${currentProfile.id})`);
+            } else {
+                // Sin departamento, solo sus propias tareas
+                query = query.or(`creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
+                query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
+            }
+        } else {
+            // Usuarios estándar solo ven sus propias tareas (creadas o asignadas)
+            query = query.or(`creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
+            // Filtrar tareas privadas: solo mostrar si el usuario es el creador
+            query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
+        }
 
         // Aplicar filtro de estado
         if (filterStatus === 'OPEN_TASKS') {
@@ -223,7 +270,11 @@ export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) =>
         }
 
         if (filters.assigned_to && filters.assigned_to !== '') {
-            query = query.eq('assigned_profile.username', filters.assigned_to);
+            query = query.eq('asignado_a', filters.assigned_to);
+        }
+
+        if (filters.department && filters.department !== '') {
+            query = query.eq('departamento', filters.department);
         }
 
         if (filters.text && filters.text.trim() !== '') {

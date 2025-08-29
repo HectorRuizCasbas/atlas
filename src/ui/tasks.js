@@ -71,13 +71,29 @@ export const validateTaskData = (taskData) => {
  * Obtiene los datos del formulario de nueva tarea
  * @returns {object} - Datos de la tarea
  */
-export const getTaskFormData = () => {
+export const getTaskFormData = async () => {
+    const assignedUserId = document.getElementById('new-assigned-to')?.value || null;
+    let departmentId = document.getElementById('new-department')?.value || null;
+    
+    // Si no se especifica departamento pero hay usuario asignado, usar el departamento del usuario asignado
+    if (!departmentId && assignedUserId) {
+        try {
+            const users = await getSupervisedUsers();
+            const assignedUser = users.find(user => user.id === assignedUserId);
+            if (assignedUser && assignedUser.departamento_id) {
+                departmentId = assignedUser.departamento_id;
+            }
+        } catch (error) {
+            console.error('Error obteniendo departamento del usuario asignado:', error);
+        }
+    }
+    
     return {
         titulo: document.getElementById('new-title')?.value || '',
         descripcion: document.getElementById('new-desc')?.value || '',
         prioridad: document.getElementById('new-priority')?.value || 'Media',
-        departamento: document.getElementById('new-department')?.value || null,
-        assigned_to: document.getElementById('new-assigned-to')?.value || null,
+        departamento: departmentId,
+        assigned_to: assignedUserId,
         privada: document.getElementById('new-private')?.checked || false
     };
 };
@@ -117,7 +133,7 @@ export const handleCreateTask = async (event) => {
         createBtn.classList.add('opacity-50', 'cursor-not-allowed');
 
         // Obtener datos del formulario
-        const taskData = getTaskFormData();
+        const taskData = await getTaskFormData();
 
         // Validar datos
         const validationError = validateTaskData(taskData);
@@ -518,6 +534,7 @@ export const createTaskCard = (task) => {
     const statusColor = getStatusColor(task.estado);
     const assignedName = task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
     const creatorName = task.creator_profile?.full_name || task.creator_profile?.username || 'Desconocido';
+    const departmentName = task.assigned_profile?.departamentos?.nombre || task.creator_profile?.departamentos?.nombre || 'Sin departamento';
     const isPrivate = task.privada;
     
     return `
@@ -545,6 +562,11 @@ export const createTaskCard = (task) => {
                 <div class="flex items-center text-slate-300">
                     <span class="font-medium mr-2">Asignada a:</span>
                     <span>${assignedName}</span>
+                </div>
+                
+                <div class="flex items-center text-slate-300">
+                    <span class="font-medium mr-2">Departamento:</span>
+                    <span>${departmentName}</span>
                 </div>
                 
                 <div class="flex items-center justify-between">
@@ -603,6 +625,7 @@ export const createTaskTableRow = (task) => {
     const statusColor = getStatusColor(task.estado);
     const assignedName = task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
     const creatorName = task.creator_profile?.full_name || task.creator_profile?.username || 'Desconocido';
+    const departmentName = task.assigned_profile?.departamentos?.nombre || task.creator_profile?.departamentos?.nombre || 'Sin departamento';
     const isPrivate = task.privada;
     
     return `
@@ -610,6 +633,7 @@ export const createTaskTableRow = (task) => {
             <td class="py-3 px-4 text-white font-medium">${task.titulo}</td>
             <td class="py-3 px-4 text-slate-300">${creatorName}</td>
             <td class="py-3 px-4 text-slate-300">${assignedName}</td>
+            <td class="py-3 px-4 text-slate-300">${departmentName}</td>
             <td class="py-3 px-4">
                 <span class="px-2 py-1 rounded-full text-xs font-medium ${priorityColor}">
                     ${task.prioridad}
@@ -877,6 +901,38 @@ export const preloadFilters = async () => {
                 }
             });
         }
+
+        // Cargar filtro de departamentos solo para administradores
+        const departmentFilterContainer = document.getElementById('filter-department-container');
+        const departmentFilter = document.getElementById('filter-department');
+        
+        if (currentProfile.role === 'Administrador' && departmentFilterContainer && departmentFilter) {
+            // Mostrar el filtro de departamentos
+            departmentFilterContainer.classList.remove('hidden');
+            
+            // Cargar departamentos
+            const departments = await getDepartments();
+            
+            // Limpiar opciones existentes
+            departmentFilter.innerHTML = '';
+            
+            // Agregar opción "Todos"
+            const allDeptOption = document.createElement('option');
+            allDeptOption.value = '';
+            allDeptOption.textContent = 'Todos';
+            departmentFilter.appendChild(allDeptOption);
+            
+            // Agregar departamentos
+            departments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept.id;
+                option.textContent = dept.nombre;
+                departmentFilter.appendChild(option);
+            });
+        } else if (departmentFilterContainer) {
+            // Ocultar el filtro de departamentos para otros roles
+            departmentFilterContainer.classList.add('hidden');
+        }
         
     } catch (error) {
         console.error('Error precargando filtros:', error);
@@ -892,7 +948,8 @@ export const setupFilterEventListeners = () => {
         'filter-state',
         'filter-priority', 
         'filter-assigned-to',
-        'filter-text'
+        'filter-text',
+        'filter-department'
     ];
 
     filterElements.forEach(filterId => {
@@ -918,6 +975,11 @@ export const setupFilterEventListeners = () => {
             document.getElementById('filter-text').value = '';
             document.getElementById('filter-state').value = 'OPEN_TASKS';
             document.getElementById('filter-priority').value = '';
+            
+            const departmentFilter = document.getElementById('filter-department');
+            if (departmentFilter) {
+                departmentFilter.value = '';
+            }
             
             // Establecer el usuario actual como filtro por defecto
             try {
@@ -1263,6 +1325,7 @@ export const getFilteredTasks = () => {
     const stateFilter = document.getElementById('filter-state')?.value || '';
     const priorityFilter = document.getElementById('filter-priority')?.value || '';
     const assignedFilter = document.getElementById('filter-assigned-to')?.value || '';
+    const departmentFilter = document.getElementById('filter-department')?.value || '';
     
     return allTasks.filter(task => {
         // Filtro de texto (busca en título y descripción)
@@ -1286,7 +1349,12 @@ export const getFilteredTasks = () => {
         // Filtro de asignación
         const matchesAssigned = !assignedFilter || task.asignado_a === assignedFilter;
         
-        return matchesText && matchesState && matchesPriority && matchesAssigned;
+        // Filtro de departamento
+        const matchesDepartment = !departmentFilter || 
+            task.assigned_profile?.departamento_id === departmentFilter ||
+            task.creator_profile?.departamento_id === departmentFilter;
+        
+        return matchesText && matchesState && matchesPriority && matchesAssigned && matchesDepartment;
     });
 };
 

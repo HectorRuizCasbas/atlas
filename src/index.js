@@ -363,33 +363,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Event listener para botón de logout unificado
-    const logoutBtn = document.getElementById('btn-logout');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
+    // El event listener de logout se configura dinámicamente en setupHamburgerEventListeners
 
-    // Event listeners para navegación unificada
-    const navigateTasksBtn = document.getElementById('btn-navigate-tasks');
-    if (navigateTasksBtn) {
-        navigateTasksBtn.addEventListener('click', () => {
-            navigateToScreen('tasks');
-        });
-    }
-
-    const navigateDepartmentsBtn = document.getElementById('btn-navigate-departments');
-    if (navigateDepartmentsBtn) {
-        navigateDepartmentsBtn.addEventListener('click', () => {
-            navigateToScreen('departments');
-        });
-    }
-
-    const navigateUsersBtn = document.getElementById('btn-navigate-users');
-    if (navigateUsersBtn) {
-        navigateUsersBtn.addEventListener('click', () => {
-            navigateToScreen('users');
-        });
-    }
+    // Los event listeners de navegación se configuran dinámicamente en setupHamburgerEventListeners
 
     // Inicializar la aplicación
     initializeApp();
@@ -457,6 +433,69 @@ async function initializeApp() {
 // Variable global para rastrear la pantalla actual
 let currentScreen = 'tasks';
 
+// Función para crear el menú hamburguesa
+function createHamburgerMenu() {
+    return `
+        <div class="hamburger-menu">
+            <button id="hamburger-button" class="hamburger-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div id="hamburger-dropdown" class="hamburger-dropdown">
+                <button id="btn-navigate-tasks" class="hamburger-item">
+                    Tareas
+                </button>
+                <button id="btn-navigate-departments" class="hamburger-item hidden">
+                    Departamentos
+                </button>
+                <button id="btn-navigate-users" class="hamburger-item hidden">
+                    Usuarios
+                </button>
+                <button id="btn-change-password" class="hamburger-item">
+                    Cambiar Contraseña
+                </button>
+                <button id="btn-delete-own-account" class="hamburger-item" style="color: #fca5a5;">
+                    Eliminar Mi Cuenta
+                </button>
+                <button id="btn-help" class="hamburger-item help-item">
+                    Ayuda
+                </button>
+                <button id="btn-logout" class="hamburger-item">
+                    Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Función para insertar el menú hamburguesa en la pantalla actual
+function insertHamburgerMenu(screenName) {
+    const containers = {
+        'tasks': document.querySelector('#screen-main #hamburger-menu-container'),
+        'users': document.querySelector('#screen-user-management #hamburger-menu-container'),
+        'departments': document.querySelector('#screen-department-management #hamburger-menu-container')
+    };
+    
+    // Limpiar todos los contenedores
+    Object.values(containers).forEach(container => {
+        if (container) {
+            container.innerHTML = '';
+        }
+    });
+    
+    // Insertar menú en el contenedor de la pantalla actual
+    const currentContainer = containers[screenName];
+    if (currentContainer) {
+        currentContainer.innerHTML = createHamburgerMenu();
+        
+        // Reconfigurar event listeners después de insertar el HTML
+        setupHamburgerEventListeners();
+    }
+}
+
 // Función para navegar entre pantallas
 function navigateToScreen(screenName) {
     // Ocultar todas las pantallas
@@ -479,8 +518,13 @@ function navigateToScreen(screenName) {
         targetScreen.classList.remove('hidden');
         currentScreen = screenName;
         
-        // Actualizar el menú hamburguesa
-        updateHamburgerMenu();
+        // Insertar menú hamburguesa en la pantalla actual
+        insertHamburgerMenu(screenName);
+        
+        // Configurar permisos y actualizar menú
+        setupMenuPermissions().then(() => {
+            updateHamburgerMenu();
+        });
         
         // Cargar datos según la pantalla
         if (screenName === 'users') {
@@ -490,12 +534,6 @@ function navigateToScreen(screenName) {
         } else if (screenName === 'tasks') {
             showMainScreen();
         }
-    }
-    
-    // Cerrar el menú hamburguesa
-    const hamburgerDropdown = document.getElementById('hamburger-dropdown');
-    if (hamburgerDropdown) {
-        hamburgerDropdown.classList.remove('show');
     }
 }
 
@@ -530,16 +568,10 @@ function updateHamburgerMenu() {
     }
 }
 
-// Función para inicializar el menú hamburguesa unificado
-async function initializeHamburgerMenus() {
+// Función para configurar event listeners del menú hamburguesa
+function setupHamburgerEventListeners() {
     const hamburgerButton = document.getElementById('hamburger-button');
     const hamburgerDropdown = document.getElementById('hamburger-dropdown');
-    
-    // Configurar permisos de menús según el rol del usuario
-    await setupMenuPermissions();
-    
-    // Actualizar menú inicial
-    updateHamburgerMenu();
     
     // Event listener para el botón hamburguesa
     if (hamburgerButton && hamburgerDropdown) {
@@ -549,9 +581,50 @@ async function initializeHamburgerMenus() {
         });
     }
     
+    // Event listeners para navegación
+    const navigateTasksBtn = document.getElementById('btn-navigate-tasks');
+    if (navigateTasksBtn) {
+        navigateTasksBtn.addEventListener('click', () => {
+            navigateToScreen('tasks');
+        });
+    }
+
+    const navigateDepartmentsBtn = document.getElementById('btn-navigate-departments');
+    if (navigateDepartmentsBtn) {
+        navigateDepartmentsBtn.addEventListener('click', () => {
+            navigateToScreen('departments');
+        });
+    }
+
+    const navigateUsersBtn = document.getElementById('btn-navigate-users');
+    if (navigateUsersBtn) {
+        navigateUsersBtn.addEventListener('click', () => {
+            navigateToScreen('users');
+        });
+    }
+    
+    // Event listener para logout
+    const logoutBtn = document.getElementById('btn-logout');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+}
+
+// Función para inicializar el menú hamburguesa unificado
+async function initializeHamburgerMenus() {
+    // Insertar menú en la pantalla inicial (tasks)
+    insertHamburgerMenu('tasks');
+    
+    // Configurar permisos de menús según el rol del usuario
+    await setupMenuPermissions();
+    
+    // Actualizar menú inicial
+    updateHamburgerMenu();
+    
     // Cerrar menú al hacer clic fuera
     document.addEventListener('click', (e) => {
         if (!e.target.closest('.hamburger-menu')) {
+            const hamburgerDropdown = document.getElementById('hamburger-dropdown');
             if (hamburgerDropdown) {
                 hamburgerDropdown.classList.remove('show');
             }
@@ -561,6 +634,7 @@ async function initializeHamburgerMenus() {
     // Cerrar menú al presionar Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
+            const hamburgerDropdown = document.getElementById('hamburger-dropdown');
             if (hamburgerDropdown) {
                 hamburgerDropdown.classList.remove('show');
             }

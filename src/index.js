@@ -371,21 +371,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Event listener para gestión de usuarios
-    const userManagementBtn = document.getElementById('btn-user-management');
-    if (userManagementBtn) {
-        userManagementBtn.addEventListener('click', () => {
-            showUserManagementScreen();
-        });
-    }
+    // Event listeners para navegación universal - Tareas
+    const mainTasksButtons = document.querySelectorAll('#btn-main-tasks, #btn-main-tasks-from-users, #btn-main-tasks-from-departments');
+    mainTasksButtons.forEach(button => {
+        if (button) {
+            button.addEventListener('click', () => {
+                showMainScreen();
+            });
+        }
+    });
 
-    // Event listener para gestión de departamentos
-    const departmentManagementBtn = document.getElementById('btn-department-management');
-    if (departmentManagementBtn) {
-        departmentManagementBtn.addEventListener('click', () => {
-            showDepartmentManagementScreen();
-        });
-    }
+    // Event listeners para navegación universal - Usuarios
+    const userManagementButtons = document.querySelectorAll('#btn-user-management, #btn-user-management-from-departments');
+    userManagementButtons.forEach(button => {
+        if (button) {
+            button.addEventListener('click', () => {
+                showUserManagementScreen();
+            });
+        }
+    });
+
+    // Event listeners para navegación universal - Departamentos
+    const departmentManagementButtons = document.querySelectorAll('#btn-department-management, #btn-department-management-from-users');
+    departmentManagementButtons.forEach(button => {
+        if (button) {
+            button.addEventListener('click', () => {
+                showDepartmentManagementScreen();
+            });
+        }
+    });
 
     // Inicializar la aplicación
     initializeApp();
@@ -442,12 +456,12 @@ async function initializeApp() {
         }
         
         // Inicializar menús hamburguesa de todas formas
-        initializeHamburgerMenus();
+        await initializeHamburgerMenus();
     }
 }
 
 // Función para inicializar los menús hamburguesa
-function initializeHamburgerMenus() {
+async function initializeHamburgerMenus() {
     // Menú hamburguesa principal
     const hamburgerButton = document.getElementById('hamburger-button');
     const hamburgerDropdown = document.getElementById('hamburger-dropdown');
@@ -472,6 +486,9 @@ function initializeHamburgerMenus() {
             hamburgerDropdownDepartmentManagement.classList.remove('show');
         }
     }
+    
+    // Configurar permisos de menús según el rol del usuario
+    await setupMenuPermissions();
     
     // Event listener para el menú principal
     if (hamburgerButton && hamburgerDropdown) {
@@ -534,4 +551,50 @@ function initializeHamburgerMenus() {
             closeAllMenus();
         }
     });
+}
+
+// Función para configurar permisos de menús según el rol del usuario
+async function setupMenuPermissions() {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        if (!currentProfile) return;
+        
+        const userRole = currentProfile.role;
+        
+        // Elementos de menú para departamentos
+        const departmentMenuItems = document.querySelectorAll('#btn-department-management, #btn-department-management-from-users');
+        
+        // Elementos de menú para usuarios
+        const userMenuItems = document.querySelectorAll('#btn-user-management, #btn-user-management-from-departments');
+        
+        // Configurar visibilidad según el rol
+        if (userRole === 'Administrador') {
+            // Administrador puede ver todo
+            departmentMenuItems.forEach(item => {
+                if (item) item.classList.remove('hidden');
+            });
+            userMenuItems.forEach(item => {
+                if (item) item.classList.remove('hidden');
+            });
+        } else if (userRole === 'Responsable') {
+            // Responsable puede ver departamentos pero no usuarios
+            departmentMenuItems.forEach(item => {
+                if (item) item.classList.remove('hidden');
+            });
+            userMenuItems.forEach(item => {
+                if (item) item.classList.add('hidden');
+            });
+        } else {
+            // Coordinador y Usuario no pueden ver departamentos ni usuarios
+            departmentMenuItems.forEach(item => {
+                if (item) item.classList.add('hidden');
+            });
+            userMenuItems.forEach(item => {
+                if (item) item.classList.add('hidden');
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error configurando permisos de menú:', error);
+    }
 }

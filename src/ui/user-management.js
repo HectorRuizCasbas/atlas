@@ -416,7 +416,6 @@ export function initializeUserManagement() {
         const input = document.getElementById(inputId);
         if (input) {
             input.addEventListener('input', renderUsersTable);
-            input.addEventListener('change', renderUsersTable);
         }
     });
     

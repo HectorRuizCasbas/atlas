@@ -1,18 +1,24 @@
 // src/ui/user-management.js
 
+import { showToast } from './tasks.js'; // Asegúrate de que esta importación exista
+import { initializeUserSession } from '../index.js'; // Agrega esta línea para importar la función
 import { createUser, getAllUsers, updateUser, deleteUser, getDepartments } from '../api/supabase.js';
+
 
 let currentUsers = [];
 let currentDepartments = [];
 
 // Función para mostrar la pantalla de gestión de usuarios
-export function showUserManagementScreen() {
+export async function showUserManagementScreen() {
     const mainScreen = document.getElementById('screen-main');
     const userManagementScreen = document.getElementById('screen-user-management');
     
     if (mainScreen && userManagementScreen) {
         mainScreen.classList.add('hidden');
         userManagementScreen.classList.remove('hidden');
+        
+        // Inicializar la interfaz de usuario para esta pantalla, incluyendo el menú.
+        await initializeUserSession('screen-user-management'); // <--- AÑADE ESTA LÍNEA
         
         // Cargar datos iniciales
         loadUserManagementData();

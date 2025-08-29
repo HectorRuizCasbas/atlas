@@ -110,48 +110,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Función para inicializar la sesión del usuario
-    const initializeUserSession = async () => {
-        try {
-            const profile = await getCurrentUserProfile();
-            
-            // Actualizar elementos de la interfaz con información del usuario
-            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management, #current-user-department-management');
-            currentUserElements.forEach(element => {
-                if (element) {
-                    element.textContent = profile.full_name || profile.username;
-                }
-            });
-            
-            // Actualizar última actividad
-            await updateLastActivity();
-            
-            // Mostrar/ocultar opciones según el rol
-            const userManagementBtn = document.getElementById('btn-user-management');
-            const departmentManagementBtn = document.getElementById('btn-department-management');
-            
-            if (userManagementBtn) {
-                if (profile.role === 'Administrador') {
-                    userManagementBtn.classList.remove('hidden');
-                } else {
-                    userManagementBtn.classList.add('hidden');
-                }
-            }
-            
-            if (departmentManagementBtn) {
-                if (profile.role === 'Administrador' || profile.role === 'Responsable') {
-                    departmentManagementBtn.classList.remove('hidden');
-                } else {
-                    departmentManagementBtn.classList.add('hidden');
-                }
-            }
-            
-            console.log('Sesión inicializada para:', profile);
-            
-        } catch (error) {
-            console.error('Error inicializando sesión:', error);
+// Función para inicializar la sesión del usuario y la interfaz de usuario.
+const initializeUserSession = async (currentPageId) => {
+    try {
+        const profile = await getCurrentUserProfile();
+        if (!profile) {
+            console.warn('Perfil de usuario no encontrado. La sesión no se pudo inicializar.');
+            return;
         }
-    };
+
+        // Actualizar elementos de la interfaz con información del usuario.
+        const currentUserElements = document.querySelectorAll(
+            '#current-user, #current-user-user-management, #current-user-department-management'
+        );
+        currentUserElements.forEach(element => {
+            if (element) {
+                element.textContent = profile.full_name || profile.username;
+            }
+        });
+
+        // Configurar permisos del menú según el rol.
+        setupMenuPermissions(profile.role, currentPageId);
+
+        // Adjuntar event listeners a todos los menús hamburguesa.
+        setupAllHamburgerMenus();
+
+        // Actualizar la última actividad del usuario.
+        await updateLastActivity();
+        
+        console.log('Sesión inicializada para:', profile);
+
+    } catch (error) {
+        console.error('Error inicializando sesión:', error);
+    }
+};
 
     // Función para manejar el login
     const handleLogin = async (event) => {
@@ -186,13 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (result.success) {
                 console.log('Login exitoso:', result.user);
-                
-                // Obtener y mostrar información del usuario
-                await initializeUserSession();
-                
-                // Redirigir a la página principal
-                loginScreen.classList.add('hidden');
-                mainScreen.classList.remove('hidden');
+		await initializeUserSession('screen-main');
+                document.getElementById('login-screen').classList.add('hidden');
+       		document.getElementById('screen-main').classList.remove('hidden');
                 
                 // Inicializar módulos que requieren sesión
                 initializeTaskManagement();
@@ -642,33 +630,50 @@ async function initializeHamburgerMenus() {
     });
 }
 
-// Función para configurar permisos de menús según el rol del usuario
-async function setupMenuPermissions() {
-    try {
+
+// Función para configurar permisos y el estado del menú
+async function setupMenuPermissions(userRole, currentPageId) {
+    // Si no se proporciona el rol, obtenerlo.
+    if (!userRole) {
         const currentProfile = await getCurrentUserProfile();
         if (!currentProfile) return;
-        
-        const userRole = currentProfile.role;
-        
-        const departmentsBtn = document.getElementById('btn-navigate-departments');
-        const usersBtn = document.getElementById('btn-navigate-users');
-        
-        // Configurar visibilidad según el rol
-        if (userRole === 'Administrador') {
-            // Administrador puede ver todo
-            if (departmentsBtn) departmentsBtn.classList.remove('hidden');
-            if (usersBtn) usersBtn.classList.remove('hidden');
-        } else if (userRole === 'Responsable') {
-            // Responsable puede ver departamentos pero no usuarios
-            if (departmentsBtn) departmentsBtn.classList.remove('hidden');
-            if (usersBtn) usersBtn.classList.add('hidden');
-        } else {
-            // Coordinador y Usuario no pueden ver departamentos ni usuarios
-            if (departmentsBtn) departmentsBtn.classList.add('hidden');
-            if (usersBtn) usersBtn.classList.add('hidden');
+        userRole = currentProfile.role;
+    }
+
+    const departmentsBtn = document.getElementById('btn-navigate-departments');
+    const usersBtn = document.getElementById('btn-navigate-users');
+    const tasksBtn = document.getElementById('btn-navigate-tasks');
+
+    // Mapear los IDs de las pantallas a los IDs de los botones del menú.
+    const pageToButtonMap = {
+        'screen-main': tasksBtn,
+        'screen-user-management': usersBtn,
+        'screen-department-management': departmentsBtn // Asegúrate de que este ID corresponda a tu pantalla de departamentos
+    };
+
+    // Deshabilitar el botón de la página actual.
+    for (const buttonId in pageToButtonMap) {
+        const button = pageToButtonMap[buttonId];
+        if (button) {
+            if (buttonId === currentPageId) {
+                button.classList.add('text-gray-500', 'cursor-not-allowed');
+                button.disabled = true;
+            } else {
+                button.classList.remove('text-gray-500', 'cursor-not-allowed');
+                button.disabled = false;
+            }
         }
-        
-    } catch (error) {
-        console.error('Error configurando permisos de menú:', error);
+    }
+
+    // Configurar visibilidad según el rol.
+    if (userRole === 'Administrador') {
+        if (departmentsBtn) departmentsBtn.classList.remove('hidden');
+        if (usersBtn) usersBtn.classList.remove('hidden');
+    } else if (userRole === 'Responsable') {
+        if (departmentsBtn) departmentsBtn.classList.remove('hidden');
+        if (usersBtn) usersBtn.classList.add('hidden');
+    } else {
+        if (departmentsBtn) departmentsBtn.classList.add('hidden');
+        if (usersBtn) usersBtn.classList.add('hidden');
     }
 }

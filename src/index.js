@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 mainScreen.classList.remove('hidden');
                 
                 // Inicializar módulos que requieren sesión
-                initializeTaskManagement();
+                await initializeTaskManagement();
                 initializeUserManagement();
                 
                 // Inicializar toggle de vista de tareas
@@ -537,7 +537,7 @@ async function initializeApp() {
             }
             
             // Inicializar módulos que requieren sesión
-            initializeTaskManagement();
+            await initializeTaskManagement();
             initializeUserManagement();
             initializeDepartmentManagement();
             

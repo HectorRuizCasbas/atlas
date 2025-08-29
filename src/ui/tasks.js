@@ -196,29 +196,22 @@ export const loadAssignedUsersDropdown = async () => {
 /**
  * Inicializa los event listeners para la gestión de tareas
  */
-export const initializeTaskManagement = () => {
+export const initializeTaskManagement = async () => {
     const createBtn = document.getElementById('btn-create');
     
     if (createBtn) {
         createBtn.addEventListener('click', handleCreateTask);
     }
-
-    // Event listener para limpiar errores al escribir en el título
-    const titleInput = document.getElementById('new-title');
-    if (titleInput) {
-        titleInput.addEventListener('input', () => {
-            // Aquí podrías agregar validación en tiempo real si lo deseas
-        });
-    }
-
-    // Cargar usuarios al inicializar
-    loadAssignedUsersDropdown();
     
-    // Precargar filtros
-    preloadFilters();
+    // Cargar usuarios asignados
+    await loadAssignedUsersDropdown();
+    
+    // Precarga de filtros y establecer valores por defecto
+    await preloadFilters();
+    await setDefaultFilterValues();
     
     // Cargar tareas abiertas al inicializar
-    loadTasks();
+    await loadTasks();
     
     // Event listeners para filtros
     setupFilterEventListeners();
@@ -586,6 +579,29 @@ export const loadTasks = async () => {
 };
 
 /**
+ * Establece los valores por defecto de los filtros
+ */
+export const setDefaultFilterValues = async () => {
+    try {
+        const currentProfile = await getCurrentUserProfile();
+        
+        // Establecer valores por defecto
+        const textFilter = document.getElementById('filter-text');
+        const stateFilter = document.getElementById('filter-state');
+        const priorityFilter = document.getElementById('filter-priority');
+        const assignedFilter = document.getElementById('filter-assigned-to');
+        
+        if (textFilter) textFilter.value = '';
+        if (stateFilter) stateFilter.value = 'OPEN_TASKS';
+        if (priorityFilter) priorityFilter.value = '';
+        if (assignedFilter && currentProfile) assignedFilter.value = currentProfile.id;
+        
+    } catch (error) {
+        console.error('Error estableciendo valores por defecto:', error);
+    }
+};
+
+/**
  * Precarga los filtros con datos del usuario
  */
 export const preloadFilters = async () => {
@@ -603,21 +619,30 @@ export const preloadFilters = async () => {
         const assignedFilter = document.getElementById('filter-assigned-to');
         
         if (assignedFilter) {
-            // Limpiar opciones existentes excepto "Todos"
-            const allOption = assignedFilter.querySelector('option[value=""]');
+            // Limpiar opciones existentes
             assignedFilter.innerHTML = '';
-            if (allOption) assignedFilter.appendChild(allOption);
             
-            // Agregar usuarios
+            // Agregar opción "Todos"
+            const allOption = document.createElement('option');
+            allOption.value = '';
+            allOption.textContent = 'Todos';
+            assignedFilter.appendChild(allOption);
+            
+            // Agregar usuario actual primero
+            const currentOption = document.createElement('option');
+            currentOption.value = currentProfile.id;
+            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+            currentOption.selected = true; // Seleccionar usuario actual por defecto
+            assignedFilter.appendChild(currentOption);
+            
+            // Agregar otros usuarios supervisados
             users.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.username;
-                option.textContent = user.full_name || user.username;
-                if (user.id === currentProfile.id) {
-                    option.textContent += ' (Yo)';
-                    option.selected = true; // Seleccionar usuario actual por defecto
+                if (user.id !== currentProfile.id) {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.full_name || user.username;
+                    assignedFilter.appendChild(option);
                 }
-                assignedFilter.appendChild(option);
             });
         }
         
@@ -656,12 +681,23 @@ export const setupFilterEventListeners = () => {
     // Event listener para resetear filtros
     const resetBtn = document.getElementById('btn-reset-filters');
     if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            // Resetear todos los filtros
+        resetBtn.addEventListener('click', async () => {
+            // Resetear todos los filtros a valores por defecto
             document.getElementById('filter-text').value = '';
             document.getElementById('filter-state').value = 'OPEN_TASKS';
             document.getElementById('filter-priority').value = '';
-            document.getElementById('filter-assigned-to').value = '';
+            
+            // Establecer el usuario actual como filtro por defecto
+            try {
+                const currentProfile = await getCurrentUserProfile();
+                const assignedFilter = document.getElementById('filter-assigned-to');
+                if (assignedFilter && currentProfile) {
+                    assignedFilter.value = currentProfile.id;
+                }
+            } catch (error) {
+                console.error('Error obteniendo perfil actual:', error);
+                document.getElementById('filter-assigned-to').value = '';
+            }
             
             // Recargar tareas
             renderCurrentTasks();
@@ -683,6 +719,9 @@ export const openTaskDetailModal = async (taskId) => {
         
         // Obtener datos de la tarea con historial
         const { task, history } = await getTaskWithHistory(taskId);
+        
+        // Precarga de filtros después de cargar usuarios
+        await preloadFilters();
         
         // Cargar datos en el formulario
         await loadTaskDetailsForm(task);
@@ -1013,7 +1052,7 @@ export const getFilteredTasks = () => {
         const matchesPriority = !priorityFilter || task.prioridad === priorityFilter;
         
         // Filtro de asignación
-        const matchesAssigned = !assignedFilter || task.assigned_to === assignedFilter;
+        const matchesAssigned = !assignedFilter || task.asignado_a === assignedFilter;
         
         return matchesText && matchesState && matchesPriority && matchesAssigned;
     });

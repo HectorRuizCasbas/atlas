@@ -330,37 +330,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Función para manejar logout
     const handleLogout = async () => {
         try {
+            // Cerrar sesión en Supabase
             await logoutUser();
             
-            // Redirigir a pantalla de login y ocultar todas las demás pantallas
-            const loginScreen = document.getElementById('screen-login');
-            const mainScreen = document.getElementById('screen-main');
-            const userManagementScreen = document.getElementById('screen-user-management');
-            const departmentManagementScreen = document.getElementById('screen-department-management');
+            // Limpiar estado de la UI
+            clearUIState();
             
-            // Ocultar todas las pantallas excepto login
-            if (mainScreen) {
-                mainScreen.classList.add('hidden');
-            }
-            if (userManagementScreen) {
-                userManagementScreen.classList.add('hidden');
-            }
-            if (departmentManagementScreen) {
-                departmentManagementScreen.classList.add('hidden');
-            }
+            // Limpiar formulario de login
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            if (usernameInput) usernameInput.value = '';
+            if (passwordInput) passwordInput.value = '';
             
-            // Mostrar pantalla de login
-            if (loginScreen) {
-                loginScreen.classList.remove('hidden');
+            // Mostrar mensaje de logout exitoso
+            const loginMessage = document.getElementById('login-message');
+            if (loginMessage) {
+                loginMessage.textContent = 'Sesión cerrada correctamente';
+                loginMessage.className = 'text-green-400 text-sm mt-2';
+                setTimeout(() => {
+                    loginMessage.textContent = '';
+                    loginMessage.className = '';
+                }, 3000);
             }
-            
-            // Limpiar información del usuario
-            const currentUserElements = document.querySelectorAll('#current-user, #current-user-user-management, #current-user-department-management');
-            currentUserElements.forEach(element => {
-                if (element) {
-                    element.textContent = '';
-                }
-            });
             
             console.log('Logout exitoso');
             
@@ -519,6 +510,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Función para inicializar la aplicación
 async function initializeApp() {
     try {
+        // Limpiar estado de UI al inicializar (especialmente importante en F5)
+        clearUIState();
+        
         // Verificar si hay una sesión activa
         const sessionActive = await hasActiveSession();
         
@@ -876,4 +870,39 @@ async function setupMenuPermissions() {
     } catch (error) {
         console.error('Error configurando permisos de menú:', error);
     }
+}
+
+// Función para limpiar el estado de la UI
+function clearUIState() {
+    // Ocultar todas las pantallas excepto login
+    const screens = [
+        'screen-main',
+        'screen-user-management', 
+        'screen-department-management'
+    ];
+    
+    screens.forEach(screenId => {
+        const screen = document.getElementById(screenId);
+        if (screen) {
+            screen.classList.add('hidden');
+        }
+    });
+    
+    // Mostrar pantalla de login
+    const loginScreen = document.getElementById('screen-login');
+    if (loginScreen) {
+        loginScreen.classList.remove('hidden');
+    }
+    
+    // Limpiar cualquier información de usuario mostrada
+    const userInfo = document.getElementById('user-info');
+    if (userInfo) {
+        userInfo.innerHTML = '';
+    }
+    
+    // Cerrar cualquier menú hamburguesa abierto
+    const hamburgerDropdowns = document.querySelectorAll('.hamburger-dropdown');
+    hamburgerDropdowns.forEach(dropdown => {
+        dropdown.classList.remove('show');
+    });
 }

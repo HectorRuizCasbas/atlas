@@ -1,7 +1,7 @@
 // src/ui/tasks.js
 // Funciones para la gestión de tareas
 
-import { createTask, getCurrentUserProfile, getSupervisedUsers, getUserTasks, getTaskWithHistory, sendChatMessage, subscribeToTaskHistory, hasActiveSession } from '../api/supabase.js';
+import { createTask, getCurrentUserProfile, getSupervisedUsers, getUserTasks, getTaskWithHistory, sendChatMessage, subscribeToTaskHistory, hasActiveSession, getDepartments } from '../api/supabase.js';
 
 /**
  * Muestra un mensaje toast al usuario

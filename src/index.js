@@ -109,43 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             hideEditDepartmentModal();
         });
     }
-
-// Función para inicializar la sesión del usuario y la interfaz de usuario.
-const initializeUserSession = async (currentPageId) => {
-    try {
-        const profile = await getCurrentUserProfile();
-        if (!profile) {
-            console.warn('Perfil de usuario no encontrado. La sesión no se pudo inicializar.');
-            return;
-        }
-
-        // Actualizar elementos de la interfaz con información del usuario.
-        const currentUserElements = document.querySelectorAll(
-            '#current-user, #current-user-user-management, #current-user-department-management'
-        );
-        currentUserElements.forEach(element => {
-            if (element) {
-                element.textContent = profile.full_name || profile.username;
-            }
-        });
-
-        // Configurar permisos del menú según el rol.
-        setupMenuPermissions(profile.role, currentPageId);
-
-        // Adjuntar event listeners a todos los menús hamburguesa.
-        setupAllHamburgerMenus();
-
-        // Actualizar la última actividad del usuario.
-        await updateLastActivity();
-        
-        console.log('Sesión inicializada para:', profile);
-
-    } catch (error) {
-        console.error('Error inicializando sesión:', error);
-    }
-};
-
-    // Función para manejar el login
+// Función para manejar el login
     const handleLogin = async (event) => {
         event.preventDefault();
         
@@ -628,52 +592,4 @@ async function initializeHamburgerMenus() {
             }
         }
     });
-}
-
-
-// Función para configurar permisos y el estado del menú
-async function setupMenuPermissions(userRole, currentPageId) {
-    // Si no se proporciona el rol, obtenerlo.
-    if (!userRole) {
-        const currentProfile = await getCurrentUserProfile();
-        if (!currentProfile) return;
-        userRole = currentProfile.role;
-    }
-
-    const departmentsBtn = document.getElementById('btn-navigate-departments');
-    const usersBtn = document.getElementById('btn-navigate-users');
-    const tasksBtn = document.getElementById('btn-navigate-tasks');
-
-    // Mapear los IDs de las pantallas a los IDs de los botones del menú.
-    const pageToButtonMap = {
-        'screen-main': tasksBtn,
-        'screen-user-management': usersBtn,
-        'screen-department-management': departmentsBtn // Asegúrate de que este ID corresponda a tu pantalla de departamentos
-    };
-
-    // Deshabilitar el botón de la página actual.
-    for (const buttonId in pageToButtonMap) {
-        const button = pageToButtonMap[buttonId];
-        if (button) {
-            if (buttonId === currentPageId) {
-                button.classList.add('text-gray-500', 'cursor-not-allowed');
-                button.disabled = true;
-            } else {
-                button.classList.remove('text-gray-500', 'cursor-not-allowed');
-                button.disabled = false;
-            }
-        }
-    }
-
-    // Configurar visibilidad según el rol.
-    if (userRole === 'Administrador') {
-        if (departmentsBtn) departmentsBtn.classList.remove('hidden');
-        if (usersBtn) usersBtn.classList.remove('hidden');
-    } else if (userRole === 'Responsable') {
-        if (departmentsBtn) departmentsBtn.classList.remove('hidden');
-        if (usersBtn) usersBtn.classList.add('hidden');
-    } else {
-        if (departmentsBtn) departmentsBtn.classList.add('hidden');
-        if (usersBtn) usersBtn.classList.add('hidden');
-    }
 }

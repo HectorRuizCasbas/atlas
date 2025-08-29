@@ -1,7 +1,7 @@
 // src/ui/user-management.js
 
 import { showToast } from './tasks.js'; // Asegúrate de que esta importación exista
-import { initializeUserSession } from '../index.js'; // Agrega esta línea para importar la función
+import { initializeUserSession } from './menu.js'
 import { createUser, getAllUsers, updateUser, deleteUser, getDepartments } from '../api/supabase.js';
 
 

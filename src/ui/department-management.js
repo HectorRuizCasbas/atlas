@@ -2,7 +2,7 @@
 
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment, getVisibleUsers, getCurrentUserProfile, updateUserRole } from '../api/supabase.js';
 import { showToast } from './tasks.js';
-import { initializeUserSession } from '../index.js';
+import { initializeUserSession } from './menu.js';
 
 let currentDepartments = [];
 let currentUsers = [];

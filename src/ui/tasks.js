@@ -10,7 +10,8 @@ import {
     getSupervisedUsers, 
     getCurrentUserProfile,
     getDepartments,
-    updateTaskWithHistory
+    updateTaskWithHistory,
+    hasActiveSession
 } from '../api/supabase.js';
 
 /**

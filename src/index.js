@@ -513,6 +513,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Event listener para cerrar el modal de ayuda
+    const closeHelpModalBtn = document.getElementById('btn-close-help-modal');
+    if (closeHelpModalBtn) {
+        closeHelpModalBtn.addEventListener('click', hideHelpModal);
+    }
+    
+    // Event listener para cerrar el modal de ayuda al hacer clic fuera
+    const helpModal = document.getElementById('help-modal');
+    if (helpModal) {
+        helpModal.addEventListener('click', (e) => {
+            if (e.target === helpModal) {
+                hideHelpModal();
+            }
+        });
+    }
+    
     // Inicializar la aplicación
     initializeApp();
 });
@@ -784,8 +800,7 @@ function setupHamburgerEventListeners() {
     if (helpBtn) {
         helpBtn.addEventListener('click', () => {
             hamburgerDropdown.classList.remove('show');
-            // Aquí se puede agregar la funcionalidad de ayuda
-            console.log('Ayuda clickeado');
+            showHelpModal();
         });
     }
 }
@@ -916,6 +931,311 @@ function clearUIState() {
     
     // Limpiar permisos de menú hamburguesa - ocultar todos los botones de navegación
     // NOTA: No ocultar aquí, se configurarán en setupMenuPermissions según el rol
+}
+
+// Función para mostrar el modal de ayuda
+function showHelpModal() {
+    const helpModal = document.getElementById('help-modal');
+    const helpContent = document.getElementById('help-content');
+    
+    if (helpModal && helpContent) {
+        // Generar contenido de ayuda según la pantalla actual
+        helpContent.innerHTML = generateHelpContent();
+        
+        // Mostrar modal
+        helpModal.classList.remove('hidden');
+        helpModal.classList.add('flex');
+    }
+}
+
+// Función para ocultar el modal de ayuda
+function hideHelpModal() {
+    const helpModal = document.getElementById('help-modal');
+    if (helpModal) {
+        helpModal.classList.add('hidden');
+        helpModal.classList.remove('flex');
+    }
+}
+
+// Función para generar contenido de ayuda según la pantalla actual
+function generateHelpContent() {
+    let content = '';
+    
+    if (currentScreen === 'tasks') {
+        content = generateTasksHelpContent();
+    } else if (currentScreen === 'users') {
+        content = generateUsersHelpContent();
+    } else if (currentScreen === 'departments') {
+        content = generateDepartmentsHelpContent();
+    } else {
+        content = generateGeneralHelpContent();
+    }
+    
+    return content;
+}
+
+// Contenido de ayuda para la página de Tareas
+function generateTasksHelpContent() {
+    return `
+        <div class="help-section">
+            <h3>🎯 Gestión de Tareas</h3>
+            <p>Esta pantalla te permite crear, gestionar y hacer seguimiento de todas las tareas del sistema.</p>
+        </div>
+        
+        <div class="help-section">
+            <h3>➕ Crear Nueva Tarea</h3>
+            <div class="help-feature">
+                <strong>Título:</strong> Nombre descriptivo de la tarea (obligatorio)
+            </div>
+            <div class="help-feature">
+                <strong>Descripción:</strong> Detalles adicionales sobre la tarea (opcional)
+            </div>
+            <div class="help-feature">
+                <strong>Prioridad:</strong> Urgente, Alta, Media, Baja
+            </div>
+            <div class="help-feature">
+                <strong>Departamento:</strong> Asignar a un departamento específico
+            </div>
+            <div class="help-feature">
+                <strong>Asignado a:</strong> Usuario responsable de la tarea
+            </div>
+            <div class="help-feature">
+                <strong>Tarea privada:</strong> Solo visible para el creador (solo si eres creador y asignado)
+            </div>
+        </div>
+        
+        <div class="help-section">
+            <h3>🔍 Filtrar Tareas</h3>
+            <ul>
+                <li><strong>Buscar por texto:</strong> Filtra por título o descripción</li>
+                <li><strong>Estado:</strong> Sin iniciar, En progreso, En espera, Finalizada</li>
+                <li><strong>Prioridad:</strong> Filtra por nivel de prioridad</li>
+                <li><strong>Asignado a:</strong> Filtra por usuario responsable</li>
+                <li><strong>Departamento:</strong> Filtra por departamento (si tienes permisos)</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>📋 Vistas de Tareas</h3>
+            <div class="help-feature">
+                <strong>Vista de Tarjetas:</strong> Visualización en formato de tarjetas con información resumida
+            </div>
+            <div class="help-feature">
+                <strong>Vista de Tabla:</strong> Visualización en tabla con todos los detalles
+            </div>
+        </div>
+        
+        <div class="help-section">
+            <h3>✏️ Editar Tareas</h3>
+            <p>Haz clic en cualquier tarea para:</p>
+            <ul>
+                <li>Modificar título, descripción y configuración</li>
+                <li>Cambiar estado y prioridad</li>
+                <li>Reasignar a otro usuario</li>
+                <li>Usar el chat integrado para comunicación</li>
+                <li>Ver historial completo de cambios</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>💬 Sistema de Chat</h3>
+            <p>Cada tarea incluye un chat integrado para:</p>
+            <ul>
+                <li>Comunicación entre usuarios</li>
+                <li>Registro automático de cambios</li>
+                <li>Historial cronológico completo</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>🔒 Permisos y Visibilidad</h3>
+            <div class="help-feature">
+                <strong>Tareas Públicas:</strong> Visibles según tu rol y departamento
+            </div>
+            <div class="help-feature">
+                <strong>Tareas Privadas:</strong> Solo visibles para el creador
+            </div>
+            <div class="help-feature">
+                <strong>Notificaciones:</strong> Recibes alertas de tareas asignadas a ti
+            </div>
+        </div>
+    `;
+}
+
+// Contenido de ayuda para la página de Usuarios
+function generateUsersHelpContent() {
+    return `
+        <div class="help-section">
+            <h3>👥 Gestión de Usuarios</h3>
+            <p>Esta pantalla permite administrar todos los usuarios del sistema. Solo disponible para Administradores.</p>
+        </div>
+        
+        <div class="help-section">
+            <h3>➕ Crear Nuevo Usuario</h3>
+            <div class="help-feature">
+                <strong>Nombre Completo:</strong> Nombre y apellidos del usuario
+            </div>
+            <div class="help-feature">
+                <strong>Usuario de Acceso:</strong> Nombre de usuario para login (se convierte a email @zelenza.com)
+            </div>
+            <div class="help-feature">
+                <strong>Contraseña:</strong> Mínimo 6 caracteres
+            </div>
+            <div class="help-feature">
+                <strong>Departamento:</strong> Asignación opcional a departamento
+            </div>
+        </div>
+        
+        <div class="help-section">
+            <h3>🔍 Filtros de Usuarios</h3>
+            <ul>
+                <li><strong>Buscar por Nombre:</strong> Filtra por nombre completo</li>
+                <li><strong>Filtrar por Rol:</strong> Usuario, Coordinador, Responsable, Administrador</li>
+                <li><strong>Filtrar por Departamento:</strong> Usuarios de departamentos específicos</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>👤 Roles de Usuario</h3>
+            <div class="help-feature">
+                <strong>Usuario:</strong> Acceso básico a tareas asignadas
+            </div>
+            <div class="help-feature">
+                <strong>Coordinador:</strong> Puede ver tareas de su departamento
+            </div>
+            <div class="help-feature">
+                <strong>Responsable:</strong> Gestiona departamentos y usuarios
+            </div>
+            <div class="help-feature">
+                <strong>Administrador:</strong> Acceso completo al sistema
+            </div>
+        </div>
+        
+        <div class="help-section">
+            <h3>✏️ Editar Usuarios</h3>
+            <p>Desde la tabla de usuarios puedes:</p>
+            <ul>
+                <li>Cambiar rol del usuario</li>
+                <li>Modificar nombre completo</li>
+                <li>Reasignar departamento</li>
+                <li>Cambiar contraseña</li>
+                <li>Ver información de actividad</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>🗑️ Eliminar Usuarios</h3>
+            <div class="help-feature">
+                <strong>Condiciones:</strong> Solo usuarios offline pueden ser eliminados
+            </div>
+            <div class="help-feature">
+                <strong>Protección:</strong> No se puede eliminar el último administrador
+            </div>
+        </div>
+        
+        <div class="help-section">
+            <h3>👁️ Visibilidad de Usuarios</h3>
+            <p>El botón "👁️" muestra:</p>
+            <ul>
+                <li>Usuarios sobre los que tienes visibilidad</li>
+                <li>Usuarios que tienen visibilidad sobre ti</li>
+                <li>Relaciones jerárquicas del sistema</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>🔐 Validación de Email</h3>
+            <div class="help-feature">
+                <strong>Dominio:</strong> Solo emails @zelenza.com son válidos
+            </div>
+            <div class="help-feature">
+                <strong>Conversión:</strong> Nombres de usuario se convierten automáticamente
+            </div>
+        </div>
+    `;
+}
+
+// Contenido de ayuda para la página de Departamentos
+function generateDepartmentsHelpContent() {
+    return `
+        <div class="help-section">
+            <h3>🏢 Gestión de Departamentos</h3>
+            <p>Esta pantalla permite administrar departamentos. Disponible para Administradores y Responsables.</p>
+        </div>
+        
+        <div class="help-section">
+            <h3>➕ Crear Nuevo Departamento</h3>
+            <div class="help-feature">
+                <strong>Nombre:</strong> Nombre descriptivo del departamento
+            </div>
+            <div class="help-feature">
+                <strong>Descripción:</strong> Información adicional sobre el departamento
+            </div>
+            <div class="help-feature">
+                <strong>Responsable:</strong> Usuario con rol 'Responsable' que gestionará el departamento
+            </div>
+        </div>
+        
+        <div class="help-section">
+            <h3>✏️ Editar Departamentos</h3>
+            <p>Desde la tabla puedes:</p>
+            <ul>
+                <li>Modificar nombre y descripción</li>
+                <li>Ver lista de usuarios del departamento</li>
+                <li>Gestionar asignaciones de usuarios</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>👥 Usuarios del Departamento</h3>
+            <p>El sistema muestra:</p>
+            <ul>
+                <li>Todos los usuarios asignados al departamento</li>
+                <li>Roles de cada usuario</li>
+                <li>Información de contacto</li>
+            </ul>
+        </div>
+    `;
+}
+
+// Contenido de ayuda general
+function generateGeneralHelpContent() {
+    return `
+        <div class="help-section">
+            <h3>🏠 Atlas - Sistema de Gestión</h3>
+            <p>Bienvenido al sistema Atlas, tu herramienta completa para gestión de tareas y usuarios.</p>
+        </div>
+        
+        <div class="help-section">
+            <h3>🧭 Navegación</h3>
+            <p>Usa el menú hamburguesa (☰) en la esquina superior derecha para:</p>
+            <ul>
+                <li>Navegar entre secciones</li>
+                <li>Cambiar tu contraseña</li>
+                <li>Acceder a esta ayuda</li>
+                <li>Cerrar sesión</li>
+            </ul>
+        </div>
+        
+        <div class="help-section">
+            <h3>🔔 Notificaciones</h3>
+            <div class="help-feature">
+                <strong>Indicador:</strong> El icono de campana muestra notificaciones pendientes
+            </div>
+            <div class="help-feature">
+                <strong>Tipos:</strong> Tareas asignadas, cambios de estado, mensajes
+            </div>
+        </div>
+        
+        <div class="help-section">
+            <h3>👤 Perfil de Usuario</h3>
+            <p>Tu nombre de usuario aparece en la barra superior y muestra:</p>
+            <ul>
+                <li>Nombre completo o usuario</li>
+                <li>Acceso a información personal</li>
+            </ul>
+        </div>
+    `;
 }
 
 // Función global para manejar logout (accesible desde cualquier contexto)

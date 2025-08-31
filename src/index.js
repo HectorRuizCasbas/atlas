@@ -3,7 +3,7 @@
 // Importar todas las funciones de los módulos.
 import { showNewUserModal, hideNewUserModal, showUserCreatedSuccessModal, hideUserCreatedSuccessModal, hideEditDepartmentModal } from './ui/modal.js';
 import { validatePasswordLength, validatePasswordMatch, transformUsernameToEmail, checkFormValidity, validateLoginFields } from './ui/validation.js';
-import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser, hasActiveSession, getAvailableResponsibleUsers, createDepartmentWithResponsible } from './api/supabase.js';
+import { createUser, loginUser, getCurrentUserProfile, updateLastActivity, getDepartments, logoutUser, hasActiveSession, getAvailableResponsibleUsers, createDepartmentWithResponsible, getAdministrators } from './api/supabase.js';
 import { initializeTaskManagement, toggleViewMode } from './ui/tasks.js';
 import { initializeUserManagement, showUserManagementScreen } from './ui/user-management.js';
 import { initializeDepartmentManagement, showDepartmentManagementScreen } from './ui/department-management.js';
@@ -934,17 +934,19 @@ function clearUIState() {
 }
 
 // Función para mostrar el modal de ayuda
-function showHelpModal() {
+async function showHelpModal() {
     const helpModal = document.getElementById('help-modal');
     const helpContent = document.getElementById('help-content');
     
     if (helpModal && helpContent) {
-        // Generar contenido de ayuda según la pantalla actual
-        helpContent.innerHTML = generateHelpContent();
-        
-        // Mostrar modal
+        // Mostrar modal con contenido de carga
+        helpContent.innerHTML = '<div class="flex items-center justify-center p-8"><div class="text-blue-300">Cargando ayuda...</div></div>';
         helpModal.classList.remove('hidden');
         helpModal.classList.add('flex');
+        
+        // Generar contenido de ayuda según la pantalla actual
+        const content = await generateHelpContent();
+        helpContent.innerHTML = content;
     }
 }
 
@@ -958,13 +960,13 @@ function hideHelpModal() {
 }
 
 // Función para generar contenido de ayuda según la pantalla actual
-function generateHelpContent() {
+async function generateHelpContent() {
     let content = '';
     
     if (currentScreen === 'tasks') {
         content = generateTasksHelpContent();
     } else if (currentScreen === 'users') {
-        content = generateUsersHelpContent();
+        content = await generateUsersHelpContent();
     } else if (currentScreen === 'departments') {
         content = generateDepartmentsHelpContent();
     } else {
@@ -1063,12 +1065,50 @@ function generateTasksHelpContent() {
 }
 
 // Contenido de ayuda para la página de Usuarios
-function generateUsersHelpContent() {
+async function generateUsersHelpContent() {
+    let administratorsSection = '';
+    
+    try {
+        // Intentar obtener la lista de administradores
+        const administrators = await getAdministrators();
+        
+        if (administrators && administrators.length > 0) {
+            administratorsSection = `
+                <div class="help-section">
+                    <h3>👨‍💼 Contactar Administradores</h3>
+                    <p>En caso de dudas o problemas, puedes contactar a cualquiera de los siguientes administradores del sistema:</p>
+                    <div class="mt-3 space-y-2">
+                        ${administrators.map(admin => `
+                            <div class="help-feature">
+                                <strong>${admin.full_name || admin.username}</strong>
+                                <div class="text-sm text-slate-300 ml-4">
+                                    <div>📧 ${admin.email || admin.username + '@zelenza.com'}</div>
+                                    ${admin.departamentos ? `<div>🏢 ${admin.departamentos.nombre}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error obteniendo administradores para ayuda:', error);
+        // Si hay error, mostrar mensaje genérico
+        administratorsSection = `
+            <div class="help-section">
+                <h3>👨‍💼 Contactar Administradores</h3>
+                <p>En caso de dudas o problemas, contacta a los administradores del sistema a través del email corporativo @zelenza.com</p>
+            </div>
+        `;
+    }
+    
     return `
         <div class="help-section">
             <h3>👥 Gestión de Usuarios</h3>
             <p>Esta pantalla permite administrar todos los usuarios del sistema. Solo disponible para Administradores.</p>
         </div>
+        
+        ${administratorsSection}
         
         <div class="help-section">
             <h3>➕ Crear Nuevo Usuario</h3>

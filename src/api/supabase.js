@@ -758,6 +758,37 @@ export const hasActiveSession = async () => {
 };
 
 /**
+ * Obtiene todos los usuarios administradores del sistema
+ * @returns {Promise<Array>} - Lista de usuarios administradores
+ */
+export const getAdministrators = async () => {
+    try {
+        const { data: administrators, error } = await supabaseClient
+            .from('profiles')
+            .select(`
+                id, 
+                username, 
+                full_name, 
+                email,
+                departamento_id,
+                departamentos!departamento_id(id, nombre)
+            `)
+            .eq('role', 'Administrador')
+            .order('full_name');
+
+        if (error) {
+            console.error('Error obteniendo administradores:', error);
+            throw new Error('Error obteniendo administradores: ' + error.message);
+        }
+
+        return administrators || [];
+    } catch (error) {
+        console.error('Error obteniendo administradores:', error);
+        throw error;
+    }
+};
+
+/**
  * Crea un nuevo departamento (solo para administradores)
  * @param {object} departmentData - Datos del departamento (nombre, descripcion)
  * @returns {Promise<object>} - Resultado de la creación

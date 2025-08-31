@@ -1377,26 +1377,15 @@ async function handleGlobalLogout() {
 // Función para mostrar el modal de información del usuario
 function showUserInfoModal(profile) {
     const modal = document.getElementById('user-info-modal');
-    const nameElement = document.getElementById('user-info-name');
-    const usernameElement = document.getElementById('user-info-username');
     const roleElement = document.getElementById('user-info-role');
     const departmentElement = document.getElementById('user-info-department');
     
     if (!modal || !profile) return;
     
-    // Actualizar información del usuario
-    if (nameElement) {
-        nameElement.textContent = profile.full_name || profile.username || 'Usuario';
-    }
-    
-    if (usernameElement) {
-        usernameElement.textContent = `@${profile.username || 'usuario'}`;
-    }
-    
     if (roleElement) {
         roleElement.textContent = profile.role || 'Usuario';
         // Limpiar clases de rol previas
-        roleElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium role-badge';
+        roleElement.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium role-badge';
         // Agregar clase específica del rol
         roleElement.classList.add(profile.role || 'Usuario');
     }
@@ -1405,7 +1394,7 @@ function showUserInfoModal(profile) {
         const departmentName = profile.departamentos?.nombre || 'Sin departamento';
         departmentElement.textContent = departmentName;
         // Limpiar clases de departamento previas
-        departmentElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium department-badge';
+        departmentElement.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium department-badge';
         // Agregar clase específica si no tiene departamento
         if (departmentName === 'Sin departamento') {
             departmentElement.classList.add('no-department');
@@ -1416,7 +1405,7 @@ function showUserInfoModal(profile) {
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     
-    console.log('Modal de información del usuario mostrado para:', profile);
+    console.log('Modal de información del usuario mostrado - Rol:', profile.role, 'Departamento:', profile.departamentos?.nombre || 'Sin departamento');
 }
 
 // Función para ocultar el modal de información del usuario

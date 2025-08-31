@@ -130,6 +130,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (element) {
                     element.textContent = displayName;
                     console.log(`Elemento actualizado: ${element.id} = ${displayName}`);
+                    
+                    // Agregar event listener para mostrar modal de información del usuario
+                    element.addEventListener('click', () => showUserInfoModal(profile));
                 }
             });
             
@@ -525,6 +528,22 @@ document.addEventListener('DOMContentLoaded', () => {
         helpModal.addEventListener('click', (e) => {
             if (e.target === helpModal) {
                 hideHelpModal();
+            }
+        });
+    }
+    
+    // Event listeners para el modal de información del usuario
+    const closeUserInfoModalBtn = document.getElementById('close-user-info-modal');
+    if (closeUserInfoModalBtn) {
+        closeUserInfoModalBtn.addEventListener('click', hideUserInfoModal);
+    }
+    
+    // Event listener para cerrar el modal de información del usuario al hacer clic fuera
+    const userInfoModal = document.getElementById('user-info-modal');
+    if (userInfoModal) {
+        userInfoModal.addEventListener('click', (e) => {
+            if (e.target === userInfoModal) {
+                hideUserInfoModal();
             }
         });
     }
@@ -1352,5 +1371,60 @@ async function handleGlobalLogout() {
         
     } catch (error) {
         console.error('Error en logout:', error);
+    }
+}
+
+// Función para mostrar el modal de información del usuario
+function showUserInfoModal(profile) {
+    const modal = document.getElementById('user-info-modal');
+    const nameElement = document.getElementById('user-info-name');
+    const usernameElement = document.getElementById('user-info-username');
+    const roleElement = document.getElementById('user-info-role');
+    const departmentElement = document.getElementById('user-info-department');
+    
+    if (!modal || !profile) return;
+    
+    // Actualizar información del usuario
+    if (nameElement) {
+        nameElement.textContent = profile.full_name || profile.username || 'Usuario';
+    }
+    
+    if (usernameElement) {
+        usernameElement.textContent = `@${profile.username || 'usuario'}`;
+    }
+    
+    if (roleElement) {
+        roleElement.textContent = profile.role || 'Usuario';
+        // Limpiar clases de rol previas
+        roleElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium role-badge';
+        // Agregar clase específica del rol
+        roleElement.classList.add(profile.role || 'Usuario');
+    }
+    
+    if (departmentElement) {
+        const departmentName = profile.departamentos?.nombre || 'Sin departamento';
+        departmentElement.textContent = departmentName;
+        // Limpiar clases de departamento previas
+        departmentElement.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium department-badge';
+        // Agregar clase específica si no tiene departamento
+        if (departmentName === 'Sin departamento') {
+            departmentElement.classList.add('no-department');
+        }
+    }
+    
+    // Mostrar modal
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    
+    console.log('Modal de información del usuario mostrado para:', profile);
+}
+
+// Función para ocultar el modal de información del usuario
+function hideUserInfoModal() {
+    const modal = document.getElementById('user-info-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        console.log('Modal de información del usuario ocultado');
     }
 }

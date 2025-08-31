@@ -316,6 +316,49 @@
             background: #64748b;
         }
 
+        /* Estilos para el modal de información del usuario */
+        #user-info-modal {
+            backdrop-filter: blur(4px);
+        }
+        
+        #user-info-modal .modal-bg {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .role-badge {
+            transition: all 0.2s ease;
+        }
+        
+        .role-badge.Administrador {
+            background-color: #dc2626 !important;
+            color: white !important;
+        }
+        
+        .role-badge.Responsable {
+            background-color: #ea580c !important;
+            color: white !important;
+        }
+        
+        .role-badge.Coordinador {
+            background-color: #ca8a04 !important;
+            color: white !important;
+        }
+        
+        .role-badge.Usuario {
+            background-color: #059669 !important;
+            color: white !important;
+        }
+        
+        .department-badge {
+            background-color: #475569 !important;
+            color: #e2e8f0 !important;
+        }
+        
+        .department-badge.no-department {
+            background-color: #64748b !important;
+            color: #cbd5e0 !important;
+        }
+
         /* Eliminar espaciado superior */
 #screen-login, #screen-main, #screen-user-management {
     margin-top: 0;
@@ -1323,6 +1366,60 @@
                     </div>
                     
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de información del usuario -->
+    <div id="user-info-modal" class="fixed inset-0 hidden items-center justify-center modal-bg z-[1200]">
+        <div class="bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+            <!-- Header del modal -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-indigo-400">Información del Usuario</h3>
+                <button id="close-user-info-modal" class="w-8 h-8 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-full transition-colors" title="Cerrar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- Contenido del modal -->
+            <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 id="user-info-name" class="text-lg font-medium text-slate-200">Nombre del Usuario</h4>
+                        <p id="user-info-username" class="text-sm text-slate-400">@username</p>
+                    </div>
+                </div>
+                
+                <div class="border-t border-slate-600 pt-4">
+                    <div class="grid grid-cols-1 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wide">Rol</label>
+                            <div class="mt-1">
+                                <span id="user-info-role" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                                    Usuario
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 uppercase tracking-wide">Departamento</label>
+                            <div class="mt-1">
+                                <span id="user-info-department" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-800">
+                                    Sin departamento
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

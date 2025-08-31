@@ -964,7 +964,7 @@ async function generateHelpContent() {
     let content = '';
     
     if (currentScreen === 'tasks') {
-        content = generateTasksHelpContent();
+        content = await generateTasksHelpContent();
     } else if (currentScreen === 'users') {
         content = await generateUsersHelpContent();
     } else if (currentScreen === 'departments') {
@@ -977,12 +977,50 @@ async function generateHelpContent() {
 }
 
 // Contenido de ayuda para la página de Tareas
-function generateTasksHelpContent() {
+async function generateTasksHelpContent() {
+    let administratorsSection = '';
+    
+    try {
+        // Intentar obtener la lista de administradores
+        const administrators = await getAdministrators();
+        
+        if (administrators && administrators.length > 0) {
+            administratorsSection = `
+                <div class="help-section">
+                    <h3>👨‍💼 Contactar Administradores</h3>
+                    <p>En caso de dudas o problemas con las tareas, puedes contactar a cualquiera de los siguientes administradores del sistema:</p>
+                    <div class="mt-3 space-y-2">
+                        ${administrators.map(admin => `
+                            <div class="help-feature">
+                                <strong>${admin.full_name || admin.username}</strong>
+                                <div class="text-sm text-slate-300 ml-4">
+                                    <div>📧 ${admin.email || admin.username + '@zelenza.com'}</div>
+                                    ${admin.departamentos ? `<div>🏢 ${admin.departamentos.nombre}</div>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error obteniendo administradores para ayuda de tareas:', error);
+        // Si hay error, mostrar mensaje genérico
+        administratorsSection = `
+            <div class="help-section">
+                <h3>👨‍💼 Contactar Administradores</h3>
+                <p>En caso de dudas o problemas, contacta a los administradores del sistema a través del email corporativo @zelenza.com</p>
+            </div>
+        `;
+    }
+    
     return `
         <div class="help-section">
             <h3>🎯 Gestión de Tareas</h3>
             <p>Esta pantalla te permite crear, gestionar y hacer seguimiento de todas las tareas del sistema.</p>
         </div>
+        
+        ${administratorsSection}
         
         <div class="help-section">
             <h3>➕ Crear Nueva Tarea</h3>

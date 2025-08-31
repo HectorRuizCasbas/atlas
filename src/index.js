@@ -132,7 +132,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`Elemento actualizado: ${element.id} = ${displayName}`);
                     
                     // Agregar event listener para mostrar modal de información del usuario
-                    element.addEventListener('click', () => showUserInfoModal(profile));
+                    element.addEventListener('click', () => {
+                        console.log('Click en usuario detectado, mostrando modal simple');
+                        showSimpleUserModal(profile);
+                    });
                 }
             });
             
@@ -1374,14 +1377,19 @@ async function handleGlobalLogout() {
     }
 }
 
-// Función para mostrar el modal de información del usuario
-function showUserInfoModal(profile) {
+// Función para mostrar el modal simple del usuario
+function showSimpleUserModal(profile) {
     const modal = document.getElementById('user-info-modal');
     const userNameDisplay = document.getElementById('user-name-display');
     const userDepartmentDisplay = document.getElementById('user-department-display');
     const userRoleDisplay = document.getElementById('user-role-display');
     
-    if (!modal || !profile) return;
+    if (!modal || !profile) {
+        console.log('Modal o profile no encontrado');
+        return;
+    }
+    
+    console.log('Mostrando modal simple con datos:', profile);
     
     // Actualizar nombre del usuario
     if (userNameDisplay) {
@@ -1402,7 +1410,7 @@ function showUserInfoModal(profile) {
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
     
-    console.log('Modal de información del usuario mostrado');
+    console.log('Modal simple mostrado correctamente');
 }
 
 // Función para ocultar el modal de información del usuario

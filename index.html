@@ -1372,10 +1372,8 @@
 
     <!-- Modal de información del usuario -->
     <div id="user-info-modal" class="fixed inset-0 hidden items-center justify-center modal-bg z-[1200]">
-        <div class="bg-slate-800 rounded-xl shadow-lg p-4 w-full max-w-xs mx-4">
-            <!-- Header del modal -->
-            <div class="flex justify-between items-center mb-3">
-                <h3 class="text-sm font-semibold text-indigo-400">Mi Información</h3>
+        <div class="bg-slate-800 rounded-xl shadow-lg p-4 w-full max-w-sm mx-4">
+            <div class="flex justify-end mb-2">
                 <button id="close-user-info-modal" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-full transition-colors" title="Cerrar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1384,21 +1382,9 @@
                 </button>
             </div>
             
-            <!-- Contenido del modal -->
-            <div class="space-y-3">
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Rol</label>
-                    <span id="user-info-role" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium role-badge Usuario">
-                        Usuario
-                    </span>
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">Departamento</label>
-                    <span id="user-info-department" class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium department-badge">
-                        Sin departamento
-                    </span>
-                </div>
+            <div class="space-y-2 text-sm text-slate-200">
+                <p id="user-department-info">Departamento de <span id="user-name-display"></span>: <span id="user-department-display"></span></p>
+                <p>Rol dentro del departamento: <span id="user-role-display"></span></p>
             </div>
         </div>
     </div>

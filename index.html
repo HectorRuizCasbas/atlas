@@ -1248,7 +1248,8 @@
     <!-- Modal de información del usuario -->
     <div id="user-info-modal" class="fixed inset-0 hidden items-center justify-center modal-bg z-[1200]">
         <div class="bg-slate-800 rounded-xl shadow-lg p-4 w-full max-w-sm mx-4">
-            <div class="flex justify-end mb-2">
+            <div class="flex justify-between items-center mb-3">
+                <h3 class="text-lg font-semibold text-indigo-400">Información de usuario</h3>
                 <button id="close-user-info-modal" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-full transition-colors" title="Cerrar">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1257,9 +1258,36 @@
                 </button>
             </div>
             
-            <div class="space-y-2 text-sm text-slate-200">
-                <p id="user-department-info">Departamento de <span id="user-name-display"></span>: <span id="user-department-display"></span></p>
-                <p>Rol dentro del departamento: <span id="user-role-display"></span></p>
+            <div class="space-y-4">
+                <!-- Información del usuario -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                            <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 id="user-name-display" class="font-medium text-slate-200">Usuario</h4>
+                    </div>
+                </div>
+                
+                <!-- Rol -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Rol</label>
+                    <span id="user-role-display" class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+                        Usuario
+                    </span>
+                </div>
+                
+                <!-- Departamento -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Departamento</label>
+                    <div class="bg-slate-700 rounded-lg p-3">
+                        <h5 id="user-department-name" class="font-medium text-slate-200 mb-1">Sin departamento</h5>
+                        <p id="user-department-description" class="text-xs text-slate-400">Sin descripción disponible</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

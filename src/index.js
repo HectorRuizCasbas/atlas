@@ -1381,7 +1381,8 @@ async function handleGlobalLogout() {
 function showSimpleUserModal(profile) {
     const modal = document.getElementById('user-info-modal');
     const userNameDisplay = document.getElementById('user-name-display');
-    const userDepartmentDisplay = document.getElementById('user-department-display');
+    const userDepartmentName = document.getElementById('user-department-name');
+    const userDepartmentDescription = document.getElementById('user-department-description');
     const userRoleDisplay = document.getElementById('user-role-display');
     
     if (!modal || !profile) {
@@ -1397,13 +1398,38 @@ function showSimpleUserModal(profile) {
     }
     
     // Actualizar departamento
-    if (userDepartmentDisplay) {
-        userDepartmentDisplay.textContent = profile.departamentos?.nombre || 'Sin departamento';
+    if (userDepartmentName) {
+        userDepartmentName.textContent = profile.departamentos?.nombre || 'Sin departamento';
     }
     
-    // Actualizar rol
+    if (userDepartmentDescription) {
+        userDepartmentDescription.textContent = profile.departamentos?.descripcion || 'Sin descripción disponible';
+    }
+    
+    // Actualizar rol con estilos
     if (userRoleDisplay) {
-        userRoleDisplay.textContent = profile.role || 'Usuario';
+        const role = profile.role || 'Usuario';
+        userRoleDisplay.textContent = role;
+        
+        // Limpiar clases previas
+        userRoleDisplay.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium';
+        
+        // Aplicar estilos según el rol
+        switch (role) {
+            case 'Administrador':
+                userRoleDisplay.classList.add('bg-red-100', 'text-red-800');
+                break;
+            case 'Responsable':
+                userRoleDisplay.classList.add('bg-orange-100', 'text-orange-800');
+                break;
+            case 'Coordinador':
+                userRoleDisplay.classList.add('bg-yellow-100', 'text-yellow-800');
+                break;
+            case 'Usuario':
+            default:
+                userRoleDisplay.classList.add('bg-emerald-100', 'text-emerald-800');
+                break;
+        }
     }
     
     // Mostrar modal

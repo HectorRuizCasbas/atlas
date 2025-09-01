@@ -8,6 +8,7 @@ import {
     sendChatMessage, 
     subscribeToTaskHistory, 
     getSupervisedUsers, 
+    getUsersByDepartment,
     getCurrentUserProfile,
     getDepartments,
     updateTaskWithHistory,
@@ -55,9 +56,10 @@ export const showToast = (message, type = 'info') => {
 /**
  * Valida los datos del formulario de nueva tarea
  * @param {object} taskData - Datos de la tarea
+ * @param {object} currentProfile - Perfil del usuario actual
  * @returns {string|null} - Mensaje de error o null si es válido
  */
-export const validateTaskData = (taskData) => {
+export const validateTaskData = async (taskData) => {
     if (!taskData.titulo || taskData.titulo.trim() === '') {
         return 'El título es obligatorio';
     }
@@ -71,9 +73,26 @@ export const validateTaskData = (taskData) => {
         return 'Prioridad no válida';
     }
 
-    if (!taskData.asignado_a || taskData.asignado_a.trim() === '') {
-        return 'Debe asignar la tarea a un usuario';
+    // Obtener perfil del usuario actual para validar asignación
+    const currentProfile = await getCurrentUserProfile();
+    
+    // Validar asignación según las reglas de negocio
+    if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
+        // Para coordinadores y responsables
+        if (taskData.departamento === currentProfile.departamento_id) {
+            // Tarea para su propio departamento - debe tener asignación
+            if (!taskData.assigned_to || taskData.assigned_to.trim() === '') {
+                return 'Debe asignar la tarea a un usuario de su departamento';
+            }
+        }
+        // Para otro departamento - puede quedar sin asignar (no validamos assigned_to)
+    } else if (currentProfile.role === 'Usuario') {
+        // Usuarios estándar - siempre deben asignarse a sí mismos
+        if (!taskData.assigned_to || taskData.assigned_to !== currentProfile.id) {
+            return 'Debe asignarse la tarea a usted mismo';
+        }
     }
+    // Administradores pueden crear tareas con o sin asignación
 
     return null;
 };
@@ -147,7 +166,7 @@ export const handleCreateTask = async (event) => {
         const taskData = await getTaskFormData();
 
         // Validar datos
-        const validationError = validateTaskData(taskData);
+        const validationError = await validateTaskData(taskData);
         if (validationError) {
             showToast(validationError, 'error');
             return;
@@ -347,7 +366,7 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
 
                 // Agregar usuarios del departamento
                 users.forEach(user => {
-                    if (user.departamento_id === selectedDepartmentId) {
+                    if (user.departamento_id === selectedDepartmentId && user.id !== currentProfile.id) {
                         const option = document.createElement('option');
                         option.value = user.id;
                         option.textContent = user.full_name || user.username;
@@ -355,9 +374,10 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
                     }
                 });
             } else if (selectedDepartmentId && selectedDepartmentId !== currentProfile.departamento_id) {
-                // Departamento diferente - sin usuarios disponibles
+                // Departamento diferente - ocultar asignación y limpiar valor
                 assignedSelect.style.display = 'none';
                 assignedSelect.previousElementSibling.style.display = 'none'; // Ocultar label también
+                assignedSelect.value = ''; // Limpiar valor para que quede sin asignar
             } else {
                 // Sin departamento seleccionado
                 assignedSelect.style.display = 'block';
@@ -367,16 +387,36 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
             }
         } else if (currentProfile.role === 'Administrador') {
             if (selectedDepartmentId) {
-                // Cargar usuarios del departamento seleccionado
-                const users = await getSupervisedUsers();
+                // Mostrar asignación y cargar usuarios del departamento seleccionado
+                assignedSelect.style.display = 'block';
+                assignedSelect.previousElementSibling.style.display = 'block';
+                assignedSelect.disabled = false;
+                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                const users = await getUsersByDepartment(selectedDepartmentId);
+                
+                // Agregar usuarios del departamento
                 users.forEach(user => {
-                    if (user.departamento_id === selectedDepartmentId) {
-                        const option = document.createElement('option');
-                        option.value = user.id;
-                        option.textContent = user.full_name || user.username;
-                        assignedSelect.appendChild(option);
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.full_name || user.username;
+                    if (user.id === currentProfile.id) {
+                        option.textContent += ' (Yo)';
                     }
+                    assignedSelect.appendChild(option);
                 });
+            } else {
+                // Sin departamento - mostrar asignación
+                assignedSelect.style.display = 'block';
+                assignedSelect.previousElementSibling.style.display = 'block';
+                assignedSelect.disabled = false;
+                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                // Agregar solo el administrador actual
+                const currentOption = document.createElement('option');
+                currentOption.value = currentProfile.id;
+                currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+                assignedSelect.appendChild(currentOption);
             }
         }
 

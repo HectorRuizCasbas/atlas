@@ -199,6 +199,37 @@ export const getSupervisedUsers = async () => {
 };
 
 /**
+ * Obtiene usuarios de un departamento específico (para administradores)
+ * @param {string} departmentId - ID del departamento
+ * @returns {Promise<Array>} - Lista de usuarios del departamento
+ */
+export const getUsersByDepartment = async (departmentId) => {
+    try {
+        const { data: users, error } = await supabaseClient
+            .from('profiles')
+            .select(`
+                id, 
+                username, 
+                full_name, 
+                role, 
+                departamento_id,
+                departamentos!departamento_id(id, nombre)
+            `)
+            .eq('departamento_id', departmentId)
+            .order('full_name');
+
+        if (error) {
+            throw new Error('Error obteniendo usuarios del departamento');
+        }
+
+        return users || [];
+    } catch (error) {
+        console.error('Error obteniendo usuarios del departamento:', error);
+        throw error;
+    }
+};
+
+/**
  * Obtiene las tareas que el usuario puede ver según sus permisos
  * @param {string} filterStatus - Filtro de estado ('OPEN_TASKS' para abiertas, '' para todas, o estado específico)
  * @param {object} filters - Filtros adicionales (priority, assigned_to, text, department)

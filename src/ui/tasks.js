@@ -109,13 +109,25 @@ export const getTaskFormData = async () => {
     console.log('getTaskFormData: assigned_to value from form:', assignedUserId);
     console.log('getTaskFormData: department value from form:', departmentId);
     
-    // Si no se especifica departamento pero hay usuario asignado, usar el departamento del usuario asignado
-    if (!departmentId && assignedUserId) {
+    // Si no se especifica departamento, usar el del usuario actual como fallback
+    if (!departmentId) {
+        try {
+            const currentProfile = await getCurrentUserProfile();
+            if (currentProfile.departamento_id) {
+                departmentId = currentProfile.departamento_id;
+            }
+        } catch (error) {
+            console.error('Error obteniendo departamento del usuario actual:', error);
+        }
+    }
+    
+    // Si hay usuario asignado y es de otro departamento, usar su departamento
+    if (assignedUserId && departmentId) {
         try {
             const users = await getSupervisedUsers();
             const assignedUser = users.find(user => user.id === assignedUserId);
             console.log('getTaskFormData: Found assigned user:', assignedUser);
-            if (assignedUser && assignedUser.departamento_id) {
+            if (assignedUser && assignedUser.departamento_id && assignedUser.departamento_id !== departmentId) {
                 departmentId = assignedUser.departamento_id;
             }
         } catch (error) {
@@ -263,11 +275,7 @@ export const loadDepartmentsDropdown = async () => {
         // Limpiar opciones existentes
         departmentSelect.innerHTML = '';
 
-        // Agregar opción "Sin departamento"
-        const noDeptOption = document.createElement('option');
-        noDeptOption.value = '';
-        noDeptOption.textContent = 'Sin departamento';
-        departmentSelect.appendChild(noDeptOption);
+        // No agregar opción "Sin departamento" - todas las tareas deben tener departamento
 
         // Lógica según el rol del usuario
         if (currentProfile.role === 'Administrador') {
@@ -339,8 +347,8 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
         noUserOption.textContent = 'Sin usuario asignado';
         assignedSelect.appendChild(noUserOption);
 
-        if (currentProfile.role === 'Usuario' && !currentProfile.departamento_id) {
-            // Usuarios sin departamento - solo pueden asignarse a sí mismos (bloqueado)
+        if (currentProfile.role === 'Usuario') {
+            // 1. USUARIOS ESTÁNDAR - Bloqueados con su departamento y su usuario
             const currentOption = document.createElement('option');
             currentOption.value = currentProfile.id;
             currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
@@ -348,24 +356,15 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
             assignedSelect.appendChild(currentOption);
             assignedSelect.disabled = true;
             assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
-        } else if (currentProfile.role === 'Usuario' && currentProfile.departamento_id) {
-            // Usuarios estándar - solo pueden asignarse a sí mismos (bloqueado)
-            const currentOption = document.createElement('option');
-            currentOption.value = currentProfile.id;
-            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
-            currentOption.selected = true;
-            assignedSelect.appendChild(currentOption);
-            assignedSelect.disabled = true;
-            assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+            
         } else if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
+            // 2. COORDINADORES Y RESPONSABLES
             if (selectedDepartmentId === currentProfile.departamento_id) {
-                // En su propio departamento - pueden elegir usuarios del departamento
-                assignedSelect.style.display = 'block';
-                assignedSelect.previousElementSibling.style.display = 'block';
+                // Su propio departamento - desbloquear y mostrar usuarios del departamento
                 assignedSelect.disabled = false;
                 assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
                 
-                const users = await getSupervisedUsers();
+                const users = await getUsersByDepartment(selectedDepartmentId);
                 
                 // Agregar usuario actual
                 const currentOption = document.createElement('option');
@@ -373,38 +372,32 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
                 currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
                 assignedSelect.appendChild(currentOption);
 
-                // Agregar usuarios del departamento
+                // Agregar otros usuarios del departamento
                 users.forEach(user => {
-                    if (user.departamento_id === selectedDepartmentId && user.id !== currentProfile.id) {
+                    if (user.id !== currentProfile.id) {
                         const option = document.createElement('option');
                         option.value = user.id;
                         option.textContent = user.full_name || user.username;
                         assignedSelect.appendChild(option);
                     }
                 });
-            } else if (selectedDepartmentId && selectedDepartmentId !== currentProfile.departamento_id) {
-                // Departamento diferente - ocultar asignación y limpiar valor
-                assignedSelect.style.display = 'none';
-                assignedSelect.previousElementSibling.style.display = 'none'; // Ocultar label también
-                assignedSelect.value = ''; // Limpiar valor para que quede sin asignar
             } else {
-                // Sin departamento seleccionado
-                assignedSelect.style.display = 'block';
-                assignedSelect.previousElementSibling.style.display = 'block';
-                assignedSelect.disabled = false;
-                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+                // Departamento diferente o sin departamento - bloquear en "Sin usuario asignado"
+                assignedSelect.disabled = true;
+                assignedSelect.classList.add('opacity-50', 'cursor-not-allowed');
+                assignedSelect.value = ''; // Sin usuario asignado
+                noUserOption.selected = true;
             }
+            
         } else if (currentProfile.role === 'Administrador') {
+            // 3. ADMINISTRADORES - Siempre desbloqueado, mostrar usuarios del departamento seleccionado
+            assignedSelect.disabled = false;
+            assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
+            
             if (selectedDepartmentId) {
-                // Mostrar asignación y cargar usuarios del departamento seleccionado
-                assignedSelect.style.display = 'block';
-                assignedSelect.previousElementSibling.style.display = 'block';
-                assignedSelect.disabled = false;
-                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
-                
+                // Departamento seleccionado - mostrar usuarios de ese departamento
                 const users = await getUsersByDepartment(selectedDepartmentId);
                 
-                // Agregar usuarios del departamento
                 users.forEach(user => {
                     const option = document.createElement('option');
                     option.value = user.id;
@@ -415,13 +408,7 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
                     assignedSelect.appendChild(option);
                 });
             } else {
-                // Sin departamento - mostrar asignación con todos los usuarios para administradores
-                assignedSelect.style.display = 'block';
-                assignedSelect.previousElementSibling.style.display = 'block';
-                assignedSelect.disabled = false;
-                assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
-                
-                // Para administradores sin departamento seleccionado, mostrar todos los usuarios
+                // Sin departamento - mostrar todos los usuarios disponibles
                 const allUsers = await getSupervisedUsers();
                 
                 // Agregar administrador actual primero

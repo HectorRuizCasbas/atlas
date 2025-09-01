@@ -265,29 +265,51 @@ export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) =>
 
         // Aplicar visibilidad según el rol del usuario
         if (currentProfile.role === 'Administrador') {
-            // Administradores ven todas las tareas excepto privadas de otros
+            // ADMINISTRADORES: Ven todas las tareas excepto privadas de otros
             query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
-        } else if (currentProfile.role === 'Responsable' || currentProfile.role === 'Coordinador') {
-            // Responsables y Coordinadores ven tareas de su departamento + sus propias tareas
+            
+        } else if (currentProfile.role === 'Responsable') {
+            // RESPONSABLES: Ven tareas creadas por él + asignadas a él + todas las de su departamento
             if (currentProfile.departamento_id) {
-                // Obtener usuarios del departamento para filtrar tareas
-                const { data: deptUsers } = await supabaseClient
-                    .from('profiles')
-                    .select('id')
-                    .eq('departamento_id', currentProfile.departamento_id);
-                
-                const deptUserIds = deptUsers ? deptUsers.map(u => u.id) : [];
-                deptUserIds.push(currentProfile.id); // Incluir al usuario actual
-                
-                // Tareas donde el creador o asignado pertenece al departamento (públicas) + tareas privadas propias
-                query = query.or(`and(creador.in.(${deptUserIds.join(',')}),privada.eq.false),and(asignado_a.in.(${deptUserIds.join(',')}),privada.eq.false),and(privada.eq.true,creador.eq.${currentProfile.id})`);
+                // Tareas del departamento (usando campo departamento) + tareas propias + tareas asignadas
+                query = query.or(`and(departamento.eq.${currentProfile.departamento_id},privada.eq.false),creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
+                // Agregar tareas privadas propias
+                query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
             } else {
                 // Sin departamento, solo sus propias tareas
                 query = query.or(`creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
                 query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
             }
+            
+        } else if (currentProfile.role === 'Coordinador') {
+            // COORDINADORES: Como responsables pero SIN ver tareas de responsables del mismo departamento
+            if (currentProfile.departamento_id) {
+                // Obtener responsables del departamento para excluirlos
+                const { data: responsables } = await supabaseClient
+                    .from('profiles')
+                    .select('id')
+                    .eq('departamento_id', currentProfile.departamento_id)
+                    .eq('role', 'Responsable');
+                
+                const responsableIds = responsables ? responsables.map(r => r.id) : [];
+                
+                if (responsableIds.length > 0) {
+                    // Tareas del departamento excluyendo las creadas por responsables + tareas propias + tareas asignadas
+                    query = query.or(`and(departamento.eq.${currentProfile.departamento_id},privada.eq.false,creador.not.in.(${responsableIds.join(',')})),creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
+                } else {
+                    // No hay responsables, ver todas las tareas del departamento
+                    query = query.or(`and(departamento.eq.${currentProfile.departamento_id},privada.eq.false),creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
+                }
+                // Agregar tareas privadas propias
+                query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
+            } else {
+                // Sin departamento, solo sus propias tareas
+                query = query.or(`creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
+                query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);
+            }
+            
         } else {
-            // Usuarios estándar solo ven sus propias tareas (creadas o asignadas)
+            // USUARIOS ESTÁNDAR: Solo ven tareas creadas por ellos y asignadas a ellos
             query = query.or(`creador.eq.${currentProfile.id},asignado_a.eq.${currentProfile.id}`);
             // Filtrar tareas privadas: solo mostrar si el usuario es el creador
             query = query.or(`privada.eq.false,and(privada.eq.true,creador.eq.${currentProfile.id})`);

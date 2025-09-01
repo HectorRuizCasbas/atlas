@@ -123,20 +123,12 @@ export const getTaskFormData = async () => {
         }
     }
     
-    // **CORRECCIÓN:** Asegurar que el usuario asignado sea el actual si no se ha seleccionado ninguno.
-    let finalAssignedTo = assignedUserId;
-    if (!finalAssignedTo) {
-        const currentProfile = await getCurrentUserProfile();
-        finalAssignedTo = currentProfile.id;
-        console.log("No se seleccionó un usuario asignado. Por defecto, se asignará la tarea al usuario actual:", finalAssignedTo);
-    }
-    
     const taskData = {
         titulo: document.getElementById('new-title')?.value || '',
         descripcion: document.getElementById('new-desc')?.value || '',
         prioridad: document.getElementById('new-priority')?.value || 'Media',
         departamento: departmentId,
-        assigned_to: finalAssignedTo, // Usar el valor corregido
+        assigned_to: assignedUserId,
         privada: document.getElementById('new-private')?.checked || false
     };
     
@@ -280,6 +272,8 @@ export const loadDepartmentsDropdown = async () => {
         // Lógica según el rol del usuario
         if (currentProfile.role === 'Administrador') {
             // Administradores pueden elegir cualquier departamento
+            departmentSelect.disabled = false;
+            departmentSelect.classList.remove('opacity-50', 'cursor-not-allowed');
             departments.forEach(dept => {
                 const option = document.createElement('option');
                 option.value = dept.id;
@@ -421,17 +415,30 @@ export const updateAssignedUsersBasedOnDepartment = async () => {
                     assignedSelect.appendChild(option);
                 });
             } else {
-                // Sin departamento - mostrar asignación
+                // Sin departamento - mostrar asignación con todos los usuarios para administradores
                 assignedSelect.style.display = 'block';
                 assignedSelect.previousElementSibling.style.display = 'block';
                 assignedSelect.disabled = false;
                 assignedSelect.classList.remove('opacity-50', 'cursor-not-allowed');
                 
-                // Agregar solo el administrador actual
+                // Para administradores sin departamento seleccionado, mostrar todos los usuarios
+                const allUsers = await getSupervisedUsers();
+                
+                // Agregar administrador actual primero
                 const currentOption = document.createElement('option');
                 currentOption.value = currentProfile.id;
                 currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
                 assignedSelect.appendChild(currentOption);
+                
+                // Agregar otros usuarios
+                allUsers.forEach(user => {
+                    if (user.id !== currentProfile.id) {
+                        const option = document.createElement('option');
+                        option.value = user.id;
+                        option.textContent = user.full_name || user.username;
+                        assignedSelect.appendChild(option);
+                    }
+                });
             }
         }
 

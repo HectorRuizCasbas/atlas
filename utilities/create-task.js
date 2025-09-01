@@ -87,7 +87,8 @@ serve(async (req) => {
     if (assigned_to && assigned_to.trim() !== '') {
       console.log('Edge Function - Buscando usuario con ID:', assigned_to)
       
-      const { data: profile, error: assignedError } = await supabaseClient
+      // Primero intentar con la consulta normal
+      let { data: profile, error: assignedError } = await supabaseClient
         .from('profiles')
         .select('id, username, full_name')
         .eq('id', assigned_to)
@@ -95,15 +96,40 @@ serve(async (req) => {
 
       console.log('Edge Function - Resultado búsqueda usuario:', { profile, assignedError })
 
+      // Si falla, intentar con una consulta más simple para verificar si el usuario existe
       if (assignedError || !profile) {
-        console.error('Edge Function - Error buscando usuario:', assignedError)
-        return new Response(
-          JSON.stringify({ error: `Usuario asignado no encontrado. ID buscado: ${assigned_to}` }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
+        console.log('Edge Function - Intentando consulta alternativa...')
+        const { data: allProfiles, error: allError } = await supabaseClient
+          .from('profiles')
+          .select('id, username, full_name')
+          .limit(100)
+
+        console.log('Edge Function - Todos los perfiles disponibles:', allProfiles?.length || 0)
+        console.log('Edge Function - Error en consulta general:', allError)
+        
+        // Buscar manualmente en los resultados
+        if (allProfiles) {
+          profile = allProfiles.find(p => p.id === assigned_to)
+          console.log('Edge Function - Usuario encontrado manualmente:', profile)
+        }
+        
+        if (!profile) {
+          console.error('Edge Function - Error buscando usuario:', assignedError)
+          return new Response(
+            JSON.stringify({ 
+              error: `Usuario asignado no encontrado. ID buscado: ${assigned_to}`,
+              debug: {
+                originalError: assignedError?.message,
+                totalProfiles: allProfiles?.length || 0,
+                searchedId: assigned_to
+              }
+            }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            }
+          )
+        }
       }
       assignedProfile = profile;
     }

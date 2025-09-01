@@ -105,11 +105,16 @@ export const getTaskFormData = async () => {
     const assignedUserId = document.getElementById('new-assigned-to')?.value || null;
     let departmentId = document.getElementById('new-department')?.value || null;
     
+    // Debug: Log form values
+    console.log('getTaskFormData: assigned_to value from form:', assignedUserId);
+    console.log('getTaskFormData: department value from form:', departmentId);
+    
     // Si no se especifica departamento pero hay usuario asignado, usar el departamento del usuario asignado
     if (!departmentId && assignedUserId) {
         try {
             const users = await getSupervisedUsers();
             const assignedUser = users.find(user => user.id === assignedUserId);
+            console.log('getTaskFormData: Found assigned user:', assignedUser);
             if (assignedUser && assignedUser.departamento_id) {
                 departmentId = assignedUser.departamento_id;
             }
@@ -118,7 +123,7 @@ export const getTaskFormData = async () => {
         }
     }
     
-    return {
+    const taskData = {
         titulo: document.getElementById('new-title')?.value || '',
         descripcion: document.getElementById('new-desc')?.value || '',
         prioridad: document.getElementById('new-priority')?.value || 'Media',
@@ -126,6 +131,9 @@ export const getTaskFormData = async () => {
         assigned_to: assignedUserId,
         privada: document.getElementById('new-private')?.checked || false
     };
+    
+    console.log('getTaskFormData: Final task data:', JSON.stringify(taskData, null, 2));
+    return taskData;
 };
 
 /**

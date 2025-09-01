@@ -47,7 +47,12 @@ serve(async (req) => {
     }
 
     // Parsear el cuerpo de la petición
-    const { titulo, descripcion, prioridad, assigned_to, departamento, privada } = await req.json()
+    const requestBody = await req.json()
+    const { titulo, descripcion, prioridad, assigned_to, departamento, privada } = requestBody
+
+    // Debug: Log received data
+    console.log('Edge Function - Datos recibidos:', JSON.stringify(requestBody, null, 2))
+    console.log('Edge Function - assigned_to value:', assigned_to, 'type:', typeof assigned_to)
 
     // Validaciones
     if (!titulo || titulo.trim() === '') {
@@ -80,15 +85,20 @@ serve(async (req) => {
     // Obtener el perfil del usuario asignado (si existe)
     let assignedProfile = null;
     if (assigned_to && assigned_to.trim() !== '') {
+      console.log('Edge Function - Buscando usuario con ID:', assigned_to)
+      
       const { data: profile, error: assignedError } = await supabaseClient
         .from('profiles')
         .select('id, username, full_name')
         .eq('id', assigned_to)
         .single()
 
+      console.log('Edge Function - Resultado búsqueda usuario:', { profile, assignedError })
+
       if (assignedError || !profile) {
+        console.error('Edge Function - Error buscando usuario:', assignedError)
         return new Response(
-          JSON.stringify({ error: 'Usuario asignado no encontrado' }),
+          JSON.stringify({ error: `Usuario asignado no encontrado. ID buscado: ${assigned_to}` }),
           { 
             status: 400, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

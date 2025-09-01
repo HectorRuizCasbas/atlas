@@ -88,6 +88,9 @@ export const createTask = async (taskData) => {
             throw new Error('No hay sesión activa');
         }
 
+        // Debug: Log the data being sent
+        console.log('createTask: Datos enviados al Edge Function:', JSON.stringify(taskData, null, 2));
+
         const response = await fetch(SUPABASE_CREATE_TASK_URL, {
             method: 'POST',
             headers: {
@@ -98,7 +101,9 @@ export const createTask = async (taskData) => {
             body: JSON.stringify(taskData)
         });
 
+        console.log('createTask: Response status:', response.status);
         const result = await response.json();
+        console.log('createTask: Response data:', JSON.stringify(result, null, 2));
         
         if (!response.ok) {
             throw new Error(result.error || 'Error desconocido al crear la tarea.');

@@ -123,19 +123,26 @@ export const getTaskFormData = async () => {
         }
     }
     
+    // **CORRECCIÓN:** Asegurar que el usuario asignado sea el actual si no se ha seleccionado ninguno.
+    let finalAssignedTo = assignedUserId;
+    if (!finalAssignedTo) {
+        const currentProfile = await getCurrentUserProfile();
+        finalAssignedTo = currentProfile.id;
+        console.log("No se seleccionó un usuario asignado. Por defecto, se asignará la tarea al usuario actual:", finalAssignedTo);
+    }
+    
     const taskData = {
         titulo: document.getElementById('new-title')?.value || '',
         descripcion: document.getElementById('new-desc')?.value || '',
         prioridad: document.getElementById('new-priority')?.value || 'Media',
         departamento: departmentId,
-        assigned_to: assignedUserId,
+        assigned_to: finalAssignedTo, // Usar el valor corregido
         privada: document.getElementById('new-private')?.checked || false
     };
     
     console.log('getTaskFormData: Final task data:', JSON.stringify(taskData, null, 2));
     return taskData;
 };
-
 /**
  * Limpia el formulario de nueva tarea
  */

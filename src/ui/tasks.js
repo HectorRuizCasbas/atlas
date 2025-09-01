@@ -221,7 +221,7 @@ export const loadAssignedUsersDropdown = async () => {
 
         // Agregar opción del usuario actual primero
         const currentUserOption = document.createElement('option');
-        currentUserOption.value = currentProfile.username;
+        currentUserOption.value = currentProfile.id;
         currentUserOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
         currentUserOption.selected = true;
         assignedSelect.appendChild(currentUserOption);
@@ -230,7 +230,7 @@ export const loadAssignedUsersDropdown = async () => {
         users.forEach(user => {
             if (user.id !== currentProfile.id) {
                 const option = document.createElement('option');
-                option.value = user.username;
+                option.value = user.id;
                 option.textContent = user.full_name || user.username;
                 assignedSelect.appendChild(option);
             }

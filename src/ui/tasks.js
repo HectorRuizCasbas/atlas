@@ -917,14 +917,12 @@ export const loadTasks = async () => {
 const getCurrentFilters = () => {
     const textFilter = document.getElementById('filter-text');
     const stateFilter = document.getElementById('filter-state');
-    const priorityFilter = document.getElementById('filter-priority');
     const assignedFilter = document.getElementById('filter-assigned-to');
     const departmentFilter = document.getElementById('filter-department');
     
     return {
         text: textFilter?.value || '',
         state: stateFilter?.value || 'OPEN_TASKS',
-        priority: priorityFilter?.value || '',
         assigned_to: assignedFilter?.value || '',
         department: departmentFilter?.value || ''
     };
@@ -940,12 +938,10 @@ export const setDefaultFilterValues = async () => {
         // Establecer valores por defecto
         const textFilter = document.getElementById('filter-text');
         const stateFilter = document.getElementById('filter-state');
-        const priorityFilter = document.getElementById('filter-priority');
         const assignedFilter = document.getElementById('filter-assigned-to');
         
         if (textFilter) textFilter.value = '';
         if (stateFilter) stateFilter.value = 'OPEN_TASKS';
-        if (priorityFilter) priorityFilter.value = '';
         if (assignedFilter && currentProfile) assignedFilter.value = currentProfile.id;
         
     } catch (error) {
@@ -1002,7 +998,8 @@ export const preloadFilters = async () => {
         const departmentFilterContainer = document.getElementById('filter-department-container');
         const departmentFilter = document.getElementById('filter-department');
         
-        if (currentProfile.role === 'Administrador' && departmentFilterContainer && departmentFilter) {
+        // Cargar filtro de departamentos para todos los roles
+        if (departmentFilterContainer && departmentFilter) {
             // Mostrar el filtro de departamentos
             departmentFilterContainer.classList.remove('hidden');
             
@@ -1018,16 +1015,38 @@ export const preloadFilters = async () => {
             allDeptOption.textContent = 'Todos';
             departmentFilter.appendChild(allDeptOption);
             
-            // Agregar departamentos
-            departments.forEach(dept => {
-                const option = document.createElement('option');
-                option.value = dept.id;
-                option.textContent = dept.nombre;
-                departmentFilter.appendChild(option);
-            });
-        } else if (departmentFilterContainer) {
-            // Ocultar el filtro de departamentos para otros roles
-            departmentFilterContainer.classList.add('hidden');
+            // Agregar departamentos según el rol
+            if (currentProfile.role === 'Administrador') {
+                // Administradores ven todos los departamentos
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.nombre;
+                    departmentFilter.appendChild(option);
+                });
+            } else if (['Responsable', 'Coordinador'].includes(currentProfile.role)) {
+                // Responsables y Coordinadores ven todos los departamentos
+                departments.forEach(dept => {
+                    const option = document.createElement('option');
+                    option.value = dept.id;
+                    option.textContent = dept.nombre;
+                    // Preseleccionar su departamento
+                    if (dept.id === currentProfile.departamento_id) {
+                        option.selected = true;
+                    }
+                    departmentFilter.appendChild(option);
+                });
+            } else {
+                // Usuarios estándar solo ven su departamento
+                const userDept = departments.find(d => d.id === currentProfile.departamento_id);
+                if (userDept) {
+                    const option = document.createElement('option');
+                    option.value = userDept.id;
+                    option.textContent = userDept.nombre;
+                    option.selected = true;
+                    departmentFilter.appendChild(option);
+                }
+            }
         }
         
     } catch (error) {
@@ -1062,7 +1081,6 @@ export const setupFilterEventListeners = () => {
     // Event listeners para recargar tareas cuando cambien los filtros
     const filterElements = [
         'filter-state',
-        'filter-priority', 
         'filter-assigned-to',
         'filter-text',
         'filter-department'
@@ -1090,7 +1108,6 @@ export const setupFilterEventListeners = () => {
             // Resetear todos los filtros a valores por defecto
             document.getElementById('filter-text').value = '';
             document.getElementById('filter-state').value = 'OPEN_TASKS';
-            document.getElementById('filter-priority').value = '';
             
             const departmentFilter = document.getElementById('filter-department');
             if (departmentFilter) {
@@ -1847,7 +1864,6 @@ export const getFilteredTasks = () => {
     // Obtener valores de los filtros
     const textFilter = document.getElementById('filter-text')?.value.toLowerCase() || '';
     const stateFilter = document.getElementById('filter-state')?.value || '';
-    const priorityFilter = document.getElementById('filter-priority')?.value || '';
     const assignedFilter = document.getElementById('filter-assigned-to')?.value || '';
     const departmentFilter = document.getElementById('filter-department')?.value || '';
     
@@ -1867,18 +1883,13 @@ export const getFilteredTasks = () => {
             matchesState = task.estado === stateFilter;
         }
         
-        // Filtro de prioridad
-        const matchesPriority = !priorityFilter || task.prioridad === priorityFilter;
-        
         // Filtro de asignación
         const matchesAssigned = !assignedFilter || task.asignado_a === assignedFilter;
         
-        // Filtro de departamento
-        const matchesDepartment = !departmentFilter || 
-            task.assigned_profile?.departamento_id === departmentFilter ||
-            task.creator_profile?.departamento_id === departmentFilter;
+        // Filtro de departamento - usar el campo departamento de la tarea
+        const matchesDepartment = !departmentFilter || task.departamento === departmentFilter;
         
-        return matchesText && matchesState && matchesPriority && matchesAssigned && matchesDepartment;
+        return matchesText && matchesState && matchesAssigned && matchesDepartment;
     });
 };
 

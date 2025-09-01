@@ -47,7 +47,7 @@ serve(async (req) => {
     }
 
     // Parsear el cuerpo de la petición
-    const { titulo, descripcion, prioridad, asignado_a, privada } = await req.json()
+    const { titulo, descripcion, prioridad, assigned_to, departamento, privada } = await req.json()
 
     // Validaciones
     if (!titulo || titulo.trim() === '') {
@@ -77,21 +77,25 @@ serve(async (req) => {
       )
     }
 
-    // Obtener el perfil del usuario asignado
-    const { data: assignedProfile, error: assignedError } = await supabaseClient
-      .from('profiles')
-      .select('id, username, full_name')
-      .eq('username', asignado_a)
-      .single()
+    // Obtener el perfil del usuario asignado (si existe)
+    let assignedProfile = null;
+    if (assigned_to && assigned_to.trim() !== '') {
+      const { data: profile, error: assignedError } = await supabaseClient
+        .from('profiles')
+        .select('id, username, full_name')
+        .eq('id', assigned_to)
+        .single()
 
-    if (assignedError || !assignedProfile) {
-      return new Response(
-        JSON.stringify({ error: 'Usuario asignado no encontrado' }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+      if (assignedError || !profile) {
+        return new Response(
+          JSON.stringify({ error: 'Usuario asignado no encontrado' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      assignedProfile = profile;
     }
 
     // Crear la tarea
@@ -101,11 +105,11 @@ serve(async (req) => {
         titulo: titulo.trim(),
         descripcion: descripcion?.trim() || null,
         creador: creatorProfile.id,
-        asignado_a: assignedProfile.id,
+        asignado_a: assignedProfile ? assignedProfile.id : null,
         prioridad: prioridad || 'Media',
         estado: 'Sin iniciar',
         privada: privada || false,
-        departamento: null
+        departamento: departamento || null
       })
       .select()
       .single()
@@ -142,16 +146,20 @@ serve(async (req) => {
         valor_anterior: null,
         valor_nuevo: 'Tarea creada',
         comentario: `[${creatorProfile.full_name || creatorProfile.username}] Tarea creada. (${formattedDate}, ${formattedTime})`
-      },
-      {
+      }
+    ];
+
+    // Solo agregar entrada de asignación si hay usuario asignado
+    if (assignedProfile) {
+      historyEntries.push({
         task_id: newTask.id,
         usuario_id: creatorProfile.id,
         campo_modificado: 'asignacion',
         valor_anterior: null,
         valor_nuevo: assignedProfile.full_name || assignedProfile.username,
         comentario: `[${creatorProfile.full_name || creatorProfile.username}] Asignada a: ${assignedProfile.full_name || assignedProfile.username} (${formattedDate}, ${formattedTime})`
-      }
-    ]
+      });
+    }
 
     const { error: historyError } = await supabaseClient
       .from('task_history')

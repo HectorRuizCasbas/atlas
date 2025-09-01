@@ -942,7 +942,14 @@ export const setDefaultFilterValues = async () => {
         
         if (textFilter) textFilter.value = '';
         if (stateFilter) stateFilter.value = 'OPEN_TASKS';
-        if (assignedFilter && currentProfile) assignedFilter.value = currentProfile.id;
+        // Para administradores, dejar "Todos" seleccionado por defecto
+        if (assignedFilter && currentProfile) {
+            if (currentProfile.role === 'Administrador') {
+                assignedFilter.value = ''; // "Todos"
+            } else {
+                assignedFilter.value = currentProfile.id; // Su propio usuario
+            }
+        }
         
     } catch (error) {
         console.error('Error estableciendo valores por defecto:', error);
@@ -976,12 +983,21 @@ export const preloadFilters = async () => {
             allOption.textContent = 'Todos';
             assignedFilter.appendChild(allOption);
             
-            // Agregar usuario actual primero
-            const currentOption = document.createElement('option');
-            currentOption.value = currentProfile.id;
-            currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
-            currentOption.selected = true; // Seleccionar usuario actual por defecto
-            assignedFilter.appendChild(currentOption);
+            // Para administradores, no preseleccionar ningún usuario (mostrar "Todos" por defecto)
+            if (currentProfile.role !== 'Administrador') {
+                // Agregar usuario actual primero y preseleccionarlo para no-administradores
+                const currentOption = document.createElement('option');
+                currentOption.value = currentProfile.id;
+                currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+                currentOption.selected = true;
+                assignedFilter.appendChild(currentOption);
+            } else {
+                // Para administradores, agregar usuario actual pero sin preseleccionar
+                const currentOption = document.createElement('option');
+                currentOption.value = currentProfile.id;
+                currentOption.textContent = `${currentProfile.full_name || currentProfile.username} (Yo)`;
+                assignedFilter.appendChild(currentOption);
+            }
             
             // Agregar otros usuarios supervisados
             users.forEach(user => {

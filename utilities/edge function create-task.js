@@ -73,9 +73,9 @@ serve(async (req)=>{
         }
       });
     }
-    // Obtener el perfil del usuario asignado (si existe)
+    // Obtener el perfil del usuario asignado (si existe y no es texto libre)
     let assignedProfile = null;
-    if (assigned_to && assigned_to.trim() !== '') {
+    if (assigned_to && assigned_to.trim() !== '' && !assigned_text) {
       console.log('Edge Function - Buscando usuario con ID:', assigned_to);
       // Primero intentar con la consulta normal
       let { data: profile, error: assignedError } = await supabaseClient.from('profiles').select('id, username, full_name').eq('id', assigned_to).single();

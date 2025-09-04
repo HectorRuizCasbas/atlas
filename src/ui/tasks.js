@@ -76,7 +76,13 @@ export const validateTaskData = async (taskData) => {
     // Obtener perfil del usuario actual para validar asignación
     const currentProfile = await getCurrentUserProfile();
     
-    // Validar asignación según las reglas de negocio
+    // Usuarios sin departamento pueden escribir cualquier texto en assigned_text
+    if (!currentProfile.departamento_id) {
+        // Para usuarios sin departamento, no validar asignación
+        return null;
+    }
+    
+    // Validar asignación según las reglas de negocio para usuarios con departamento
     if (['Coordinador', 'Responsable'].includes(currentProfile.role)) {
         // Para coordinadores y responsables
         if (taskData.departamento === currentProfile.departamento_id) {
@@ -86,8 +92,8 @@ export const validateTaskData = async (taskData) => {
             }
         }
         // Para otro departamento - puede quedar sin asignar (no validamos assigned_to)
-    } else if (currentProfile.role === 'Usuario') {
-        // Usuarios estándar - siempre deben asignarse a sí mismos
+    } else if (currentProfile.role === 'Usuario' && currentProfile.departamento_id) {
+        // Usuarios estándar con departamento - siempre deben asignarse a sí mismos
         if (!taskData.assigned_to || taskData.assigned_to !== currentProfile.id) {
             return 'Debe asignarse la tarea a usted mismo';
         }

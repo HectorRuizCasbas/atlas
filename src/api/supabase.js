@@ -245,24 +245,24 @@ export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) =>
         const currentProfile = await getCurrentUserProfile();
         
         let query = supabaseClient
-            .from('tasks')
-            .select(`
-                id,
-                titulo,
-                descripcion,
-                creador,
-                asignado_a,
-                assigned_text,
-                prioridad,
-                estado,
-                privada,
-                departamento,
-                created_at,
-                updated_at,
-                creator_profile:creador(id, username, full_name, departamento_id, departamentos!departamento_id(nombre)),
-                assigned_profile:asignado_a(id, username, full_name, departamento_id, departamentos!departamento_id(nombre))
-            `)
-            .order('updated_at', { ascending: false });
+        .from('tasks')
+        .select(`
+            id,
+            titulo,
+            descripcion,
+            creador,
+            asignado_a,
+            prioridad,
+            estado,
+            privada,
+            departamento,
+            created_at,
+            updated_at,
+            creator_profile:creador(id, username, full_name, departamento_id, departamentos!departamento_id(nombre)),
+            assigned_profile:asignado_a(id, username, full_name, departamento_id, departamentos!departamento_id(nombre)),
+            assigned_text
+        `)
+        .order('updated_at', { ascending: false });
 
         // Aplicar visibilidad según el rol del usuario
         if (currentProfile.role === 'Administrador') {

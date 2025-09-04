@@ -102,27 +102,6 @@ export const validateTaskData = async (taskData) => {
  * @returns {object} - Datos de la tarea
  */
 export const getTaskFormData = async () => {
-    const currentProfile = await getCurrentUserProfile();
-    
-    // Para usuarios sin departamento, usar campo de texto libre
-    if (!currentProfile.departamento_id) {
-        const assignedText = document.getElementById('new-assigned-text')?.value || '';
-        
-        const taskData = {
-            titulo: document.getElementById('new-title')?.value || '',
-            descripcion: document.getElementById('new-desc')?.value || '',
-            prioridad: document.getElementById('new-priority')?.value || 'Media',
-            departamento: null, // Siempre sin departamento
-            assigned_to: null, // Sin usuario de la tabla
-            assigned_text: assignedText, // Campo de texto libre
-            privada: document.getElementById('new-private')?.checked || false
-        };
-        
-        console.log('getTaskFormData (sin departamento): Final task data:', JSON.stringify(taskData, null, 2));
-        return taskData;
-    }
-    
-    // Lógica original para usuarios con departamento
     const assignedUserId = document.getElementById('new-assigned-to')?.value || null;
     let departmentId = document.getElementById('new-department')?.value || null;
     
@@ -133,6 +112,7 @@ export const getTaskFormData = async () => {
     // Si no se especifica departamento, usar el del usuario actual como fallback
     if (!departmentId) {
         try {
+            const currentProfile = await getCurrentUserProfile();
             if (currentProfile.departamento_id) {
                 departmentId = currentProfile.departamento_id;
             }
@@ -287,27 +267,9 @@ export const loadAssignedUsersDropdown = async () => {
 export const loadDepartmentsDropdown = async () => {
     try {
         const departmentSelect = document.getElementById('new-department');
-        const departmentContainer = document.getElementById('new-department-container');
-        const assignedContainer = document.getElementById('new-assigned-container');
-        const assignedTextContainer = document.getElementById('new-assigned-text-container');
-        
-        const currentProfile = await getCurrentUserProfile();
-        
-        // Para usuarios sin departamento, ocultar departamento y mostrar campo de texto
-        if (!currentProfile.departamento_id) {
-            if (departmentContainer) departmentContainer.style.display = 'none';
-            if (assignedContainer) assignedContainer.style.display = 'none';
-            if (assignedTextContainer) assignedTextContainer.style.display = 'block';
-            return;
-        }
-        
-        // Para usuarios con departamento, mostrar departamento y ocultar campo de texto
-        if (departmentContainer) departmentContainer.style.display = 'block';
-        if (assignedContainer) assignedContainer.style.display = 'block';
-        if (assignedTextContainer) assignedTextContainer.style.display = 'none';
-        
         if (!departmentSelect) return;
 
+        const currentProfile = await getCurrentUserProfile();
         const departments = await getDepartments();
 
         // Limpiar opciones existentes
@@ -349,6 +311,10 @@ export const loadDepartmentsDropdown = async () => {
                 departmentSelect.disabled = true;
                 departmentSelect.classList.add('opacity-50', 'cursor-not-allowed');
             }
+        } else {
+            // Usuarios sin departamento - solo "Sin departamento" (bloqueado)
+            departmentSelect.disabled = true;
+            departmentSelect.classList.add('opacity-50', 'cursor-not-allowed');
         }
 
         // Configurar el dropdown de usuarios basado en el departamento seleccionado
@@ -626,7 +592,7 @@ export const getStatusColor = (status) => {
 export const createTaskCard = (task) => {
     const priorityColor = getPriorityColor(task.prioridad);
     const statusColor = getStatusColor(task.estado);
-    const assignedName = task.assigned_text || task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
+    const assignedName = task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
     const creatorName = task.creator_profile?.full_name || task.creator_profile?.username || 'Desconocido';
     const departmentName = task.assigned_profile?.departamentos?.nombre || task.creator_profile?.departamentos?.nombre || 'Sin departamento';
     const isPrivate = task.privada;
@@ -717,7 +683,7 @@ export const createTaskCard = (task) => {
 export const createTaskTableRow = (task) => {
     const priorityColor = getPriorityColor(task.prioridad);
     const statusColor = getStatusColor(task.estado);
-    const assignedName = task.assigned_text || task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
+    const assignedName = task.assigned_profile?.full_name || task.assigned_profile?.username || 'Sin asignar';
     const creatorName = task.creator_profile?.full_name || task.creator_profile?.username || 'Desconocido';
     const departmentName = task.assigned_profile?.departamentos?.nombre || task.creator_profile?.departamentos?.nombre || 'Sin departamento';
     const isPrivate = task.privada;
@@ -917,8 +883,7 @@ export const loadTasks = async () => {
             priority: filters.priority,
             assigned_to: filters.assigned_to,
             text: filters.text,
-            department: filters.department,
-            assigned_text: filters.assigned_text
+            department: filters.department
         });
         
         // Almacenar las tareas globalmente para el cambio de vista
@@ -954,14 +919,12 @@ const getCurrentFilters = () => {
     const stateFilter = document.getElementById('filter-state');
     const assignedFilter = document.getElementById('filter-assigned-to');
     const departmentFilter = document.getElementById('filter-department');
-    const assignedTextFilter = document.getElementById('filter-assigned-text');
     
     return {
         text: textFilter?.value || '',
         state: stateFilter?.value || 'OPEN_TASKS',
         assigned_to: assignedFilter?.value || '',
-        department: departmentFilter?.value || '',
-        assigned_text: assignedTextFilter?.value || ''
+        department: departmentFilter?.value || ''
     };
 };
 
@@ -1005,16 +968,9 @@ export const preloadFilters = async () => {
             return;
         }
 
-        const currentProfile = await getCurrentUserProfile();
-        
-        // Para usuarios sin departamento, configurar filtros especiales
-        if (!currentProfile.departamento_id) {
-            await setupFiltersForUsersWithoutDepartment();
-            return;
-        }
-
         // Cargar usuarios supervisados en el filtro de asignación
         const users = await getSupervisedUsers();
+        const currentProfile = await getCurrentUserProfile();
         const assignedFilter = document.getElementById('filter-assigned-to');
         
         if (assignedFilter) {
@@ -1135,67 +1091,6 @@ export const preloadFilters = async () => {
 };
 
 /**
- * Configura filtros especiales para usuarios sin departamento
- */
-const setupFiltersForUsersWithoutDepartment = async () => {
-    try {
-        // Ocultar filtros de departamento y usuario asignado
-        const departmentFilterContainer = document.getElementById('filter-department-container');
-        const assignedFilterContainer = document.getElementById('filter-assigned-to-container');
-        const assignedTextFilterContainer = document.getElementById('filter-assigned-text-container');
-        
-        if (departmentFilterContainer) departmentFilterContainer.style.display = 'none';
-        if (assignedFilterContainer) assignedFilterContainer.style.display = 'none';
-        if (assignedTextFilterContainer) assignedTextFilterContainer.style.display = 'block';
-        
-        // Cargar opciones de texto asignado desde las tareas del usuario
-        await loadAssignedTextFilterOptions();
-        
-    } catch (error) {
-        console.error('Error configurando filtros para usuarios sin departamento:', error);
-    }
-};
-
-/**
- * Carga las opciones del filtro de texto asignado para usuarios sin departamento
- */
-const loadAssignedTextFilterOptions = async () => {
-    try {
-        const assignedTextFilter = document.getElementById('filter-assigned-text');
-        if (!assignedTextFilter) return;
-        
-        // Obtener todas las tareas del usuario para extraer los textos únicos
-        const tasks = await getUserTasks('ALL_TASKS', {});
-        
-        // Extraer textos únicos de asignación
-        const assignedTexts = [...new Set(tasks
-            .map(task => task.assigned_text)
-            .filter(text => text && text.trim() !== '')
-        )].sort();
-        
-        // Limpiar opciones existentes
-        assignedTextFilter.innerHTML = '';
-        
-        // Agregar opción "Todos"
-        const allOption = document.createElement('option');
-        allOption.value = '';
-        allOption.textContent = 'Todos';
-        assignedTextFilter.appendChild(allOption);
-        
-        // Agregar opciones de textos únicos
-        assignedTexts.forEach(text => {
-            const option = document.createElement('option');
-            option.value = text;
-            option.textContent = text;
-            assignedTextFilter.appendChild(option);
-        });
-        
-    } catch (error) {
-        console.error('Error cargando opciones de filtro de texto asignado:', error);
-    }
-};
-
-/**
  * Configura los event listeners para los filtros
  */
 export const setupFilterEventListeners = () => {
@@ -1204,8 +1099,7 @@ export const setupFilterEventListeners = () => {
         'filter-state',
         'filter-assigned-to',
         'filter-text',
-        'filter-department',
-        'filter-assigned-text'
+        'filter-department'
     ];
 
     filterElements.forEach(filterId => {

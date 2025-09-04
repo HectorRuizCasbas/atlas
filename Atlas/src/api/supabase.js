@@ -252,7 +252,6 @@ export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) =>
                 descripcion,
                 creador,
                 asignado_a,
-                assigned_text,
                 prioridad,
                 estado,
                 privada,
@@ -328,10 +327,6 @@ export const getUserTasks = async (filterStatus = 'OPEN_TASKS', filters = {}) =>
 
         if (filters.department && filters.department !== '') {
             query = query.eq('departamento', filters.department);
-        }
-
-        if (filters.assigned_text && filters.assigned_text !== '') {
-            query = query.eq('assigned_text', filters.assigned_text);
         }
 
         if (filters.text && filters.text.trim() !== '') {

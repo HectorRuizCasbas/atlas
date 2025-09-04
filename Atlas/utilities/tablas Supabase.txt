@@ -1,0 +1,179 @@
+//TABLA DEPARTAMENTOS
+
+create table public.departamentos (
+  id uuid not null default gen_random_uuid (),
+  nombre text not null,
+  descripcion text null,
+  created_at timestamp with time zone not null default now(),
+  constraint departamentos_pkey primary key (id),
+  constraint departamentos_nombre_key unique (nombre)
+) TABLESPACE pg_default;
+
+
+//TABLA NOTIFICACIONES
+
+create table public.notificaciones (
+  id uuid not null default gen_random_uuid (),
+  usuario_id uuid not null,
+  tipo text not null,
+  mensaje text not null,
+  leida boolean not null default false,
+  task_id uuid null,
+  created_at timestamp with time zone not null default now(),
+  constraint notificaciones_pkey primary key (id),
+  constraint notificaciones_task_id_fkey foreign KEY (task_id) references tasks (id) on delete CASCADE,
+  constraint notificaciones_usuario_id_fkey foreign KEY (usuario_id) references profiles (id) on delete CASCADE,
+  constraint notificaciones_tipo_check check (
+    (
+      tipo = any (
+        array[
+          'tarea_asignada'::text,
+          'tarea_modificada'::text,
+          'solicitud_acceso'::text,
+          'tarea_finalizada'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+create index IF not exists idx_notificaciones_usuario_id on public.notificaciones using btree (usuario_id) TABLESPACE pg_default;
+create index IF not exists idx_notificaciones_leida on public.notificaciones using btree (usuario_id, leida) TABLESPACE pg_default;
+create index IF not exists idx_notificaciones_created_at on public.notificaciones using btree (created_at) TABLESPACE pg_default;
+
+//TABLA PROFILES
+
+create table public.profiles (
+  id uuid not null,
+  username text not null,
+  role text not null,
+  "lastActivity" timestamp with time zone null,
+  email text null,
+  full_name text null,
+  departamento_id uuid null,
+  constraint profiles_pkey primary key (id),
+  constraint profiles_departamento_id_fkey foreign KEY (departamento_id) references departamentos (id),
+  constraint profiles_id_fkey foreign KEY (id) references auth.users (id) on delete CASCADE,
+  constraint profiles_role_check check (
+    (
+      role = any (
+        array[
+          'Administrador'::text,
+          'Responsable'::text,
+          'Coordinador'::text,
+          'Usuario'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+
+//TABLA TASK_HISTORY
+
+create table public.task_history (
+  id uuid not null default gen_random_uuid (),
+  task_id uuid not null,
+  usuario_id uuid not null,
+  campo_modificado text not null,
+  valor_anterior text null,
+  valor_nuevo text null,
+  comentario text null,
+  created_at timestamp with time zone not null default now(),
+  constraint task_history_pkey primary key (id),
+  constraint task_history_task_id_fkey foreign KEY (task_id) references tasks (id) on delete CASCADE,
+  constraint task_history_usuario_id_fkey foreign KEY (usuario_id) references profiles (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_task_history_task_id on public.task_history using btree (task_id) TABLESPACE pg_default;
+
+create index IF not exists idx_task_history_created_at on public.task_history using btree (task_id, created_at) TABLESPACE pg_default;
+
+create index IF not exists idx_task_history_task_type_created on public.task_history using btree (task_id, campo_modificado, created_at) TABLESPACE pg_default;
+
+create index IF not exists idx_task_history_chat_messages on public.task_history using btree (task_id, created_at) TABLESPACE pg_default
+where
+  (campo_modificado = 'chat_message'::text);
+
+
+
+//TABLA TASK
+
+create table public.tasks (
+  id uuid not null default gen_random_uuid (),
+  titulo text not null,
+  descripcion text null,
+  creador uuid not null,
+  asignado_a uuid not null,
+  prioridad text not null default 'Media'::text,
+  estado text not null default 'Sin iniciar'::text,
+  privada boolean not null default false,
+  departamento uuid null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint tasks_pkey primary key (id),
+  constraint tasks_creador_fkey foreign KEY (creador) references profiles (id) on delete CASCADE,
+  constraint tasks_departamento_fkey foreign KEY (departamento) references departamentos (id),
+  constraint tasks_asignado_a_fkey foreign KEY (asignado_a) references profiles (id) on delete CASCADE,
+  constraint tasks_estado_check check (
+    (
+      estado = any (
+        array[
+          'Sin iniciar'::text,
+          'En progreso'::text,
+          'En espera'::text,
+          'Finalizada'::text
+        ]
+      )
+    )
+  ),
+  constraint tasks_prioridad_check check (
+    (
+      prioridad = any (
+        array[
+          'Baja'::text,
+          'Media'::text,
+          'Alta'::text,
+          'Urgente'::text
+        ]
+      )
+    )
+  ),
+  constraint tasks_privada_check check (
+    (
+      (privada = false)
+      or (
+        (privada = true)
+        and (creador = asignado_a)
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_tasks_creador on public.tasks using btree (creador) TABLESPACE pg_default;
+
+create index IF not exists idx_tasks_asignado_a on public.tasks using btree (asignado_a) TABLESPACE pg_default;
+
+create index IF not exists idx_tasks_estado on public.tasks using btree (estado) TABLESPACE pg_default;
+
+create index IF not exists idx_tasks_prioridad on public.tasks using btree (prioridad) TABLESPACE pg_default;
+
+create index IF not exists idx_tasks_updated_at on public.tasks using btree (updated_at) TABLESPACE pg_default;
+
+create trigger log_task_changes_trigger
+after
+update on tasks for EACH row
+execute FUNCTION log_task_changes ();
+
+create trigger notify_task_changes_trigger
+after INSERT
+or
+update on tasks for EACH row
+execute FUNCTION notify_task_changes ();
+
+create trigger update_tasks_updated_at BEFORE
+update on tasks for EACH row
+execute FUNCTION update_updated_at_column ();
+
+create trigger validate_task_changes_trigger BEFORE
+update on tasks for EACH row
+execute FUNCTION validate_task_changes ();

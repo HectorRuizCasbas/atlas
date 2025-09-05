@@ -186,11 +186,16 @@ serve(async (req)=>{
         comentario: `[${creatorProfile.full_name || creatorProfile.username}] Asignada a: ${assigned_text.trim()} (${formattedDate}, ${formattedTime})`
       });
     }
-    const { error: historyError } = await supabaseClient.from('task_history').insert(historyEntries);
-    if (historyError) {
-      console.error('Error creando historial:', historyError);
-    // No fallar la creación de la tarea por error en historial
+    // Intentar crear el historial, pero no fallar si hay error
+    try {
+      const { error: historyError } = await supabaseClient.from('task_history').insert(historyEntries);
+      if (historyError) {
+        console.error('Error creando historial (no crítico):', historyError);
+      }
+    } catch (historyException) {
+      console.error('Excepción creando historial (no crítico):', historyException);
     }
+    // Siempre devolver respuesta exitosa si la tarea se creó
     return new Response(JSON.stringify({
       success: true,
       task: newTask,

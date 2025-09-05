@@ -102,11 +102,23 @@ export const createTask = async (taskData) => {
         });
 
         console.log('createTask: Response status:', response.status);
-        const result = await response.json();
-        console.log('createTask: Response data:', JSON.stringify(result, null, 2));
+        
+        let result;
+        try {
+            result = await response.json();
+            console.log('createTask: Response data:', JSON.stringify(result, null, 2));
+        } catch (parseError) {
+            console.error('Error parsing JSON response:', parseError);
+            throw new Error('Error en la respuesta del servidor');
+        }
         
         if (!response.ok) {
-            throw new Error(result.error || 'Error desconocido al crear la tarea.');
+            throw new Error(result.error || result.details || 'Error desconocido al crear la tarea.');
+        }
+
+        // Verificar que la respuesta tenga la estructura esperada
+        if (!result.success) {
+            throw new Error(result.error || 'La tarea no se creó correctamente');
         }
 
         return result;
